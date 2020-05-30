@@ -1,5 +1,3 @@
-#include "cstdio"
-
 #include <engine/system.h>
 #include <engine/external_libs.h>
 #include <engine/window.h>
@@ -15,6 +13,8 @@ int GameMain()
     auto renderCfg = cgt::render::RenderConfig(window);
     auto render = cgt::render::IRenderContext::BuildWithConfig(renderCfg);
 
+    cgt::render::RenderQueue renderQueue;
+
     SDL_Event event {};
     bool quitRequested = false;
     while (!quitRequested)
@@ -29,7 +29,10 @@ int GameMain()
             }
         }
 
-        render->Submit();
+        renderQueue.Reset();
+        renderQueue.clearColor = glm::vec4(1.0f, 0.3f, 1.0f, 1.0f);
+
+        render->Submit(renderQueue);
     }
 
     return 0;

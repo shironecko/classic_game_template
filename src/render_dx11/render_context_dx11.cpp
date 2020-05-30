@@ -98,10 +98,9 @@ std::shared_ptr<RenderContextDX11> RenderContextDX11::BuildWithConfig(RenderConf
     return context;
 }
 
-void RenderContextDX11::Submit()
+void RenderContextDX11::Submit(RenderQueue& queue)
 {
-    float clearColor[] = { 1.0f, 0.0f, 1.0f, 1.0f };
-    m_Context->ClearRenderTargetView(m_RTView.Get(), clearColor);
+    m_Context->ClearRenderTargetView(m_RTView.Get(), &queue.clearColor.x);
     m_Swapchain->Present(0, 0);
 }
 

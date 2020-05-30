@@ -1,7 +1,6 @@
 #pragma once
 
 #include <engine/window.h>
-#include <render_core/render_config.h>
 #include <render_core/i_render_context.h>
 
 namespace cgt::render
@@ -11,7 +10,7 @@ class RenderContextDX11 : public IRenderContext, private NonCopyable
 public:
     static std::shared_ptr<RenderContextDX11> BuildWithConfig(RenderConfig config);
 
-    void Submit() override;
+    void Submit(RenderQueue& queue) override;
 
     ~RenderContextDX11() override;
 

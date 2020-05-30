@@ -1,6 +1,6 @@
 add_library(render_core
     render_config.cpp render_config.h
-    i_render_context.h)
+    i_render_context.h render_queue.cpp render_queue.h)
 
 target_link_libraries(render_core
     PUBLIC
