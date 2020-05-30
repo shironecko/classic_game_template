@@ -1,5 +1,5 @@
 add_library(render_dx11
-    render.cpp render.h
+    render_context_dx11.cpp render_context_dx11.h
     pch.h system.h)
 
 target_link_libraries(render_dx11

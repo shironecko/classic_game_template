@@ -6,17 +6,17 @@
 
 namespace cgt::render
 {
-class RenderContext : public IRenderContext, private NonCopyable
+class RenderContextDX11 : public IRenderContext, private NonCopyable
 {
 public:
-    static std::shared_ptr<RenderContext> BuildWithConfig(RenderConfig config);
+    static std::shared_ptr<RenderContextDX11> BuildWithConfig(RenderConfig config);
 
     void Submit() override;
 
-    ~RenderContext() override;
+    ~RenderContextDX11() override;
 
 private:
-    explicit RenderContext(std::shared_ptr<Window> window);
+    explicit RenderContextDX11(std::shared_ptr<Window> window);
 
     std::shared_ptr<Window> m_Window;
 

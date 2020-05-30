@@ -1,6 +1,6 @@
 #include <render_dx11/pch.h>
 
-#include <render_dx11/render.h>
+#include <render_dx11/render_context_dx11.h>
 
 #include <SDL2/SDL_syswm.h>
 
@@ -9,7 +9,7 @@ namespace cgt::render
 
 std::shared_ptr<IRenderContext> IRenderContext::BuildWithConfig(RenderConfig config)
 {
-    return RenderContext::BuildWithConfig(std::move(config));
+    return RenderContextDX11::BuildWithConfig(std::move(config));
 }
 
 RenderConfig::RenderConfig(std::shared_ptr<Window> window)
@@ -17,9 +17,9 @@ RenderConfig::RenderConfig(std::shared_ptr<Window> window)
 {
 }
 
-std::shared_ptr<RenderContext> RenderContext::BuildWithConfig(RenderConfig config)
+std::shared_ptr<RenderContextDX11> RenderContextDX11::BuildWithConfig(RenderConfig config)
 {
-    auto context = std::shared_ptr<RenderContext>(new RenderContext(config.GetSDLWindow()));
+    auto context = std::shared_ptr<RenderContextDX11>(new RenderContextDX11(config.GetSDLWindow()));
 
     UINT deviceFlags = 0;
     CGT_DEBUG_ONLY(deviceFlags |= D3D11_CREATE_DEVICE_DEBUG);
@@ -98,19 +98,19 @@ std::shared_ptr<RenderContext> RenderContext::BuildWithConfig(RenderConfig confi
     return context;
 }
 
-void RenderContext::Submit()
+void RenderContextDX11::Submit()
 {
     float clearColor[] = { 1.0f, 0.0f, 1.0f, 1.0f };
     m_Context->ClearRenderTargetView(m_RTView.Get(), clearColor);
     m_Swapchain->Present(0, 0);
 }
 
-RenderContext::~RenderContext()
+RenderContextDX11::~RenderContextDX11()
 {
 
 }
 
-RenderContext::RenderContext(std::shared_ptr<Window> window)
+RenderContextDX11::RenderContextDX11(std::shared_ptr<Window> window)
     : m_Window(std::move(window))
 {
 }
