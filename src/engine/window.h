@@ -23,6 +23,11 @@ public:
 
     bool PollEvent(SDL_Event& outEvent);
 
+    u32 GetWidth() const;
+    u32 GetHeight() const;
+
+    SDL_Window* GetSDLWindow() { return m_Window; }
+
 private:
     explicit Window(SDL_Window* window);
 

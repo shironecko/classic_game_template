@@ -28,6 +28,8 @@ int GameMain()
                 break;
             }
         }
+
+        render->Submit();
     }
 
     return 0;

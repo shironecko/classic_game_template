@@ -8,6 +8,7 @@ target_link_libraries(render_dx11
         render_core
     PRIVATE
         d3d11
-        d3dcompiler)
+        d3dcompiler
+        dxgi)
 
 target_precompile_headers(render_dx11 PRIVATE pch.h)

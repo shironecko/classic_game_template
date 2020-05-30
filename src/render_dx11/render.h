@@ -11,6 +11,8 @@ class RenderContext : public IRenderContext, private NonCopyable
 public:
     static std::shared_ptr<RenderContext> BuildWithConfig(RenderConfig config);
 
+    void Submit() override;
+
     ~RenderContext() override;
 
 private:
@@ -21,5 +23,6 @@ private:
     ComPtr<ID3D11Device> m_Device;
     ComPtr<ID3D11DeviceContext> m_Context;
     ComPtr<IDXGISwapChain> m_Swapchain;
+    ComPtr<ID3D11RenderTargetView> m_RTView;
 };
 }

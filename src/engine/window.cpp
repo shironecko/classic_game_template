@@ -43,4 +43,20 @@ bool Window::PollEvent(SDL_Event& outEvent)
     return SDL_PollEvent(&outEvent) == 1;
 }
 
+u32 Window::GetWidth() const
+{
+    int width, unused;
+    SDL_GL_GetDrawableSize(m_Window, &width, &unused);
+
+    return width;
+}
+
+u32 Window::GetHeight() const
+{
+    int unused, height;
+    SDL_GL_GetDrawableSize(m_Window, &unused, &height);
+
+    return height;
+}
+
 }
