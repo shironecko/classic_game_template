@@ -30,6 +30,7 @@ int GameMain()
         }
 
         renderQueue.Reset();
+        renderQueue.sprites.emplace_back(cgt::render::SpriteDrawRequest());
         renderQueue.clearColor = glm::vec4(1.0f, 0.3f, 1.0f, 1.0f);
 
         render->Submit(renderQueue);

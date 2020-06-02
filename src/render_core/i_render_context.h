@@ -7,13 +7,20 @@
 namespace cgt::render
 {
 
+struct RenderStats
+{
+    usize spriteCount;
+    usize drawcallCount;
+};
+
 class IRenderContext
 {
 public:
     // meant to be implemented by concrete rendering libraries
     static std::shared_ptr<IRenderContext> BuildWithConfig(RenderConfig config);
 
-    virtual void Submit(RenderQueue& queue) = 0;
+    virtual RenderStats Submit(RenderQueue& queue) = 0;
+    virtual TextureHandle LoadTexture(const char* path) = 0;
 
     virtual ~IRenderContext() = default;
 };

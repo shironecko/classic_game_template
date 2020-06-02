@@ -4,16 +4,21 @@ namespace cgt::render
 {
 
 // backend dependent
-typedef usize TextureId;
+class TextureData;
+
+typedef std::shared_ptr<TextureData> TextureHandle;
+
 
 struct SpriteDrawRequest
 {
-    glm::vec4 colorTint;
-    glm::vec2 position;
-    glm::vec2 uv;
-    TextureId textureId;
-    float rotation;
-    u8 depth;
+    glm::vec4 colorTint = glm::vec4(1.0f);
+    glm::vec2 position = glm::vec4(0.0f);
+    glm::vec2 uvMin = glm::vec4(0.0f);
+    glm::vec2 uvMax = glm::vec4(1.0f);
+    glm::vec2 scale = glm::vec4(1.0f);
+    TextureHandle texture;
+    float rotation = 0.0f;
+    u8 depth = 0;
 };
 
 class RenderQueue : private NonCopyable

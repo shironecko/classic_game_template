@@ -33,19 +33,23 @@ do {                                                                            
     }                                                                                                               \
 } while (false);
 
-#define CGT_ASSERT_ALWAYS(condition, fmtStr, ...)                                               \
+#define CGT_ASSERT_ALWAYS_MSG(condition, fmtStr, ...)                                           \
 while (!(condition))                                                                            \
 {                                                                                               \
     std::string CGT_ASSERT_ALWAYS_userMsg = fmt::format(fmtStr, ##__VA_ARGS__);                 \
     CGT_PANIC("Assertion failed: {}\n{}", #condition, CGT_ASSERT_ALWAYS_userMsg);               \
 }
 
+#define CGT_ASSERT_ALWAYS(condition) CGT_ASSERT_ALWAYS_MSG((condition), "Assertion failed!")
+
 #if defined(DEBUG) || defined(_DEBUG)
 #define CGT_DEBUG_ONLY(stmt) (stmt)
-#define CGT_ASSERT(condition) CGT_ASSERT_ALWAYS(condition)
+#define CGT_ASSERT(condition) CGT_ASSERT_ALWAYS((condition))
+#define CGT_ASSERT_MSG(condition, fmtStr, ...) CGT_ASSERT_ALWAYS((condition), fmtStr, ##__VA_ARGS__)
 #else
 #define CGT_DEBUG_ONLY(stmt)
 #define CGT_ASSERT(condition)
+#define CGT_ASSERT_MSG(condition, fmtStr, ...)
 #endif
 
 typedef int8_t i8;

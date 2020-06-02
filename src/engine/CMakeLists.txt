@@ -1,7 +1,7 @@
 add_library(engine
     engine_main.cpp
     window.cpp window.h
-    pch.h external_libs.h system.h)
+    pch.h external_libs.h system.h assets.cpp assets.h)
 
 find_package(SDL2 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)

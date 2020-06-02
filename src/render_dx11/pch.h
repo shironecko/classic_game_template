@@ -3,6 +3,7 @@
 #include <engine/external_libs.h>
 #include <engine/system.h>
 
+#include <render_core/missingno.png.h>
 #include <render_dx11/system.h>
 
 #include <d3d11.h>
