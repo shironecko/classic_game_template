@@ -2,6 +2,7 @@
 
 #include <engine/window.h>
 #include <render_core/i_render_context.h>
+#include <render_core/i_camera.h>
 #include <DirectXTK/CommonStates.h>
 
 namespace cgt::render
@@ -23,7 +24,7 @@ class RenderContextDX11 : public IRenderContext, private NonCopyable
 public:
     static std::shared_ptr<RenderContextDX11> BuildWithConfig(RenderConfig config);
 
-    RenderStats Submit(RenderQueue& queue) override;
+    RenderStats Submit(RenderQueue& queue, const ICamera& camera) override;
     TextureHandle LoadTexture(const char* path) override;
 
     ~RenderContextDX11() override;

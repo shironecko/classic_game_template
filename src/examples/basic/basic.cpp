@@ -3,6 +3,7 @@
 #include <engine/window.h>
 
 #include <render_core/i_render_context.h>
+#include <render_core/camera_simple_ortho.h>
 
 int GameMain()
 {
@@ -14,6 +15,10 @@ int GameMain()
     auto render = cgt::render::IRenderContext::BuildWithConfig(renderCfg);
 
     cgt::render::RenderQueue renderQueue;
+    cgt::render::CameraSimpleOrtho camera;
+    camera.windowWidth = window->GetWidth();
+    camera.windowHeight = window->GetHeight();
+    camera.pixelsPerUnit = 512.0f;
 
     SDL_Event event {};
     bool quitRequested = false;
@@ -33,7 +38,7 @@ int GameMain()
         renderQueue.sprites.emplace_back(cgt::render::SpriteDrawRequest());
         renderQueue.clearColor = glm::vec4(1.0f, 0.3f, 1.0f, 1.0f);
 
-        render->Submit(renderQueue);
+        render->Submit(renderQueue, camera);
     }
 
     return 0;
