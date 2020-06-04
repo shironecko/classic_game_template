@@ -28,9 +28,13 @@ int GameMain()
         "assets/examples/maps");
 
     SDL_Event event {};
+    cgt::render::RenderStats renderStats{};
     bool quitRequested = false;
     while (!quitRequested)
     {
+        render->NewFrame();
+        window->NewFrame();
+
         while (window->PollEvent(event))
         {
             switch (event.type)
@@ -41,12 +45,20 @@ int GameMain()
             }
         }
 
+        {
+            ImGui::SetNextWindowSize({200, 80}, ImGuiCond_FirstUseEver);
+            ImGui::Begin("Render Stats");
+            ImGui::Text("Sprites: %d", renderStats.spriteCount);
+            ImGui::Text("Drawcalls: %d", renderStats.drawcallCount);
+            ImGui::End();
+        }
+
         renderQueue.Reset();
         renderQueue.clearColor = glm::vec4(1.0f, 0.3f, 1.0f, 1.0f);
 
         tiledMap->Render(renderQueue);
 
-        render->Submit(renderQueue, camera);
+        renderStats = render->Submit(renderQueue, camera);
     }
 
     return 0;

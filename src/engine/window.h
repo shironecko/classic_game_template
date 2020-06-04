@@ -26,6 +26,8 @@ public:
     u32 GetWidth() const;
     u32 GetHeight() const;
 
+    void NewFrame();
+
     SDL_Window* GetSDLWindow() { return m_Window; }
 
 private:

@@ -36,6 +36,8 @@ std::shared_ptr<RenderContextDX11> RenderContextDX11::BuildWithConfig(RenderConf
         &featureLevel,
         context->m_Context.GetAddressOf());
 
+    ImGui_ImplDX11_Init(context->m_Device.Get(), context->m_Context.Get());
+
     CGT_CHECK_HRESULT(hresult, "Failed to create D3D11 Device and Context!");
     CGT_ASSERT_ALWAYS_MSG(featureLevel == D3D_FEATURE_LEVEL_11_0, "D3D Feature Level 11 is not supported!");
 
@@ -292,6 +294,9 @@ RenderStats RenderContextDX11::Submit(RenderQueue& queue, const ICamera& camera)
         ++stats.drawcallCount;
     }
 
+    ImGui::Render();
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
     m_Swapchain->Present(0, 0);
 
     return stats;
@@ -299,7 +304,7 @@ RenderStats RenderContextDX11::Submit(RenderQueue& queue, const ICamera& camera)
 
 RenderContextDX11::~RenderContextDX11()
 {
-
+    ImGui_ImplDX11_Shutdown();
 }
 
 RenderContextDX11::RenderContextDX11(std::shared_ptr<Window> window)
@@ -315,6 +320,11 @@ TextureHandle RenderContextDX11::LoadTexture(const char* path)
     CGT_CHECK_HRESULT(hresult, "Couldn't create texture from file at {}", path);
 
     return newTexture;
+}
+
+void RenderContextDX11::NewFrame()
+{
+    ImGui_ImplDX11_NewFrame();
 }
 
 HRESULT RenderContextDX11::LoadTextureFromMemory(const u8* data, usize size, TextureData& outData)

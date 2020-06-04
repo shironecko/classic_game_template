@@ -23,6 +23,8 @@ public:
     virtual RenderStats Submit(RenderQueue& queue, const ICamera& camera) = 0;
     virtual TextureHandle LoadTexture(const char* path) = 0;
 
+    virtual void NewFrame() = 0;
+
     virtual ~IRenderContext() = default;
 };
 

@@ -27,6 +27,8 @@ public:
     RenderStats Submit(RenderQueue& queue, const ICamera& camera) override;
     TextureHandle LoadTexture(const char* path) override;
 
+    void NewFrame() override;
+
     ~RenderContextDX11() override;
 
 private:
