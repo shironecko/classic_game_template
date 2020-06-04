@@ -219,6 +219,7 @@ std::shared_ptr<RenderContextDX11> RenderContextDX11::BuildWithConfig(RenderConf
 RenderStats RenderContextDX11::Submit(RenderQueue& queue, const ICamera& camera)
 {
     RenderStats stats {};
+    stats.spriteCount = queue.sprites.size();
 
     D3D11_VIEWPORT viewport {};
     viewport.TopLeftX = 0.0f;
@@ -268,30 +269,68 @@ RenderStats RenderContextDX11::Submit(RenderQueue& queue, const ICamera& camera)
     m_Context->OMSetBlendState(m_CommonStates->NonPremultiplied(), nullptr, 0xFFFFFFFF);
     m_Context->OMSetDepthStencilState(m_CommonStates->DepthNone(), 0);
 
-    for (auto& sprite : queue.sprites)
+    std::sort(queue.sprites.begin(), queue.sprites.end(), [](const SpriteDrawRequest& a, const SpriteDrawRequest& b)
     {
-        ID3D11ShaderResourceView* texture = sprite.texture.get() != nullptr
+        return a.depth < b.depth || a.texture != b.texture;
+    });
+
+    auto GetSpriteTexture = [this](const SpriteDrawRequest& sprite)
+    {
+        return sprite.texture.get() != nullptr
             ? sprite.texture->m_View.Get()
             : m_MissingTexture.m_View.Get();
+    };
 
-        const glm::mat4 translation = glm::translate(glm::mat4(1.0f), glm::vec3(sprite.position, sprite.depth / 255.0f));
-        const glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(sprite.scale, 1.0f));
-        const glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(sprite.rotation), glm::vec3(0.0f, 0.0f, 1.0f));
-        const glm::mat4 worldTransform = translation * rotation * scale;
+    for (usize spriteIdx = 0; spriteIdx < queue.sprites.size();)
+    {
+        auto* currentTexture = GetSpriteTexture(queue.sprites[spriteIdx]);
+        m_Context->PSSetShaderResources(0, 1, &currentTexture);
 
-        const glm::vec2 uvScale(sprite.uvMax.x - sprite.uvMin.x, sprite.uvMax.y - sprite.uvMin.y);
-        const glm::vec2 uvTranslation = glm::vec2(0.5f) * uvScale + sprite.uvMin; // add 0.5f * uvScale to remap back into [0, 1] range
-        const glm::vec4 uvTransform(uvTranslation, uvScale);
+        D3D11_MAPPED_SUBRESOURCE worldTransformSubres{};
+        m_Context->Map(m_InstanceWorldTransform.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &worldTransformSubres);
+        auto* worldTransformBuff = (glm::mat4*)worldTransformSubres.pData;
 
-        UpdateBuffer(m_Context.Get(), m_InstanceWorldTransform.Get(), worldTransform);
-        UpdateBuffer(m_Context.Get(), m_InstanceUVTransform.Get(), uvTransform);
-        UpdateBuffer(m_Context.Get(), m_InstanceColor.Get(), sprite.colorTint);
+        D3D11_MAPPED_SUBRESOURCE uvTransformSubres{};
+        m_Context->Map(m_InstanceUVTransform.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &uvTransformSubres);
+        auto* uvTransformBuff = (glm::vec4*)uvTransformSubres.pData;
 
-        m_Context->PSSetShaderResources(0, 1, &texture);
+        D3D11_MAPPED_SUBRESOURCE colorSubres{};
+        m_Context->Map(m_InstanceColor.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &colorSubres);
+        auto* colorBuff = (glm::vec4*)colorSubres.pData;
 
-        m_Context->DrawIndexedInstanced(6, 1, 0, 0, 0);
-        ++stats.spriteCount;
+        usize spritesInBatch = 0;
+        do
+        {
+            auto& sprite = queue.sprites[spriteIdx];
+            auto* texture = GetSpriteTexture(sprite);
+            if (texture != currentTexture)
+            {
+                break;
+            }
+
+            const glm::mat4 translation = glm::translate(glm::mat4(1.0f), glm::vec3(sprite.position, sprite.depth / 255.0f));
+            const glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(sprite.scale, 1.0f));
+            const glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(sprite.rotation), glm::vec3(0.0f, 0.0f, 1.0f));
+            const glm::mat4 worldTransform = translation * rotation * scale;
+
+            const glm::vec2 uvScale(sprite.uvMax.x - sprite.uvMin.x, sprite.uvMax.y - sprite.uvMin.y);
+            const glm::vec2 uvTranslation = glm::vec2(0.5f) * uvScale + sprite.uvMin; // add 0.5f * uvScale to remap back into [0, 1] range
+            const glm::vec4 uvTransform(uvTranslation, uvScale);
+
+            worldTransformBuff[spritesInBatch] = worldTransform;
+            uvTransformBuff[spritesInBatch] = uvTransform;
+            colorBuff[spritesInBatch] = sprite.colorTint;
+
+            ++spriteIdx;
+            ++spritesInBatch;
+        } while (spritesInBatch < MAX_BATCH_SIZE && spriteIdx < queue.sprites.size());
+
+        m_Context->Unmap(m_InstanceWorldTransform.Get(), 0);
+        m_Context->Unmap(m_InstanceUVTransform.Get(), 0);
+        m_Context->Unmap(m_InstanceColor.Get(), 0);
+
         ++stats.drawcallCount;
+        m_Context->DrawIndexedInstanced(6, spritesInBatch, 0, 0, 0);
     }
 
     ImGui::Render();

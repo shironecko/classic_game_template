@@ -12,4 +12,6 @@
 #include <wrl/client.h>
 #include <comdef.h>
 
+#include <bindings/imgui_impl_dx11.h>
+
 using Microsoft::WRL::ComPtr;
