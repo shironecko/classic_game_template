@@ -3,6 +3,7 @@
 #include <engine/window.h>
 #include <engine/assets.h>
 #include <engine/tilemap.h>
+#include <engine/clock.h>
 
 #include <render_core/i_render_context.h>
 #include <render_core/camera_simple_ortho.h>
@@ -27,11 +28,14 @@ int GameMain()
         *render,
         "assets/examples/maps");
 
+    cgt::Clock frameClock;
     SDL_Event event {};
     cgt::render::RenderStats renderStats{};
     bool quitRequested = false;
     while (!quitRequested)
     {
+        const float dt = frameClock.Tick();
+
         render->NewFrame();
         window->NewFrame();
 
@@ -48,6 +52,7 @@ int GameMain()
         {
             ImGui::SetNextWindowSize({200, 80}, ImGuiCond_FirstUseEver);
             ImGui::Begin("Render Stats");
+            ImGui::Text("Frame time: %.2fms", dt * 1000.0f);
             ImGui::Text("Sprites: %d", renderStats.spriteCount);
             ImGui::Text("Drawcalls: %d", renderStats.drawcallCount);
             ImGui::End();
