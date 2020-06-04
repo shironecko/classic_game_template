@@ -3,10 +3,17 @@ add_library(engine
     window.cpp window.h
     pch.h external_libs.h system.h assets.cpp assets.h)
 
+target_compile_definitions(engine
+    PUBLIC
+    GLM_FORCE_DEPTH_ZERO_TO_ONE
+    GLM_FORCE_LEFT_HANDED
+    NOMINMAX)
+
 find_package(SDL2 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
+find_package(tmx CONFIG REQUIRED)
 
 target_link_libraries(engine
     PUBLIC
@@ -14,18 +21,14 @@ target_link_libraries(engine
         fmt::fmt fmt::fmt-header-only
         imgui::imgui
         glm
+        tmx tmx_shared
         render_core
     PRIVATE
         $<$<PLATFORM_ID:Windows>:render_dx11>
 )
 
-target_compile_definitions(engine
-    PUBLIC
-        GLM_FORCE_DEPTH_ZERO_TO_ONE
-        GLM_FORCE_LEFT_HANDED
-        NOMINMAX
-)
-
 target_precompile_headers(engine PRIVATE pch.h)
 
-target_include_directories(engine PUBLIC ../)
+target_include_directories(engine
+    PUBLIC
+        ../)
