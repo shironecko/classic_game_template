@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include <filesystem>
 
 #define CGT_PANIC(fmtStr, ...)                                                                                      \

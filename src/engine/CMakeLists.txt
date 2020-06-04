@@ -1,7 +1,9 @@
 add_library(engine
     engine_main.cpp
     window.cpp window.h
-    pch.h external_libs.h system.h assets.cpp assets.h)
+    pch.h external_libs.h system.h
+    assets.cpp assets.h
+    tilemap.h tilemap.cpp)
 
 target_compile_definitions(engine
     PUBLIC

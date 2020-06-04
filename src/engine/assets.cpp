@@ -68,15 +68,14 @@ std::vector<u8> LoadFile(const char* path)
     return LoadFileInternal(formattedPath);
 }
 
-std::unique_ptr<tmx_map> LoadTiledMap(const char* path)
+tmx_map* LoadTiledMap(const char* path)
 {
     const std::string formattedPath = FormatPath(path);
     auto mapData = LoadFileInternal(formattedPath);
     tmx_map* map = tmx_load_buffer((char*)mapData.data(), mapData.size());
     CGT_ASSERT_ALWAYS_MSG(map != nullptr, "Failed to load a tiled map at: {}\nTMX error: {}", formattedPath.c_str(), tmx_strerr());
 
-    auto mapPtr = std::unique_ptr<tmx_map>(map);
-    return mapPtr;
+    return map;
 }
 
 }

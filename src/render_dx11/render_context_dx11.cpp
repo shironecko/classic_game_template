@@ -278,7 +278,7 @@ RenderStats RenderContextDX11::Submit(RenderQueue& queue, const ICamera& camera)
         const glm::mat4 worldTransform = translation * rotation * scale;
 
         const glm::vec2 uvScale(sprite.uvMax.x - sprite.uvMin.x, sprite.uvMax.y - sprite.uvMin.y);
-        const glm::vec2 uvTranslation = glm::vec2(0.5f) + sprite.uvMin; // add 0.5f to remap back into [0, 1] range
+        const glm::vec2 uvTranslation = glm::vec2(0.5f) * uvScale + sprite.uvMin; // add 0.5f * uvScale to remap back into [0, 1] range
         const glm::vec4 uvTransform(uvTranslation, uvScale);
 
         UpdateBuffer(m_Context.Get(), m_InstanceWorldTransform.Get(), worldTransform);
