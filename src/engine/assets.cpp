@@ -5,75 +5,84 @@
 namespace cgt
 {
 
-const char* GetGameRoot()
+const std::filesystem::path& GetGameRoot()
 {
-    static std::string root;
-    if (root.empty())
+    auto FindGameRoot = []()
     {
-        root = SDL_GetBasePath();
+        auto root = std::filesystem::current_path();
         bool gameRootFound = false;
         const usize MAX_DEPTH = 10;
         for (usize i = 0; i < MAX_DEPTH; ++i)
         {
-            std::string assetsPath = root + "/assets";
+            auto assetsPath = root / "assets";
             if (std::filesystem::exists(assetsPath))
             {
                 gameRootFound = true;
                 break;
             }
 
-            root += "/..";
+            root /= "..";
         }
 
         if (!gameRootFound)
         {
-            CGT_PANIC("Failed to find the game's root folder! Launched from: {}", SDL_GetBasePath());
+            auto currentPath = std::filesystem::current_path();
+            CGT_PANIC("Failed to find the game's root folder! Launched from: {}", currentPath);
         }
 
-        // TODO: normalize path
-    }
+        return std::filesystem::canonical(root);
+    };
 
-    return root.c_str();
+    static std::filesystem::path root = FindGameRoot();
+
+    return root;
 }
 
-std::string FormatPath(const char* path)
+const std::filesystem::path& GetAssetsRoot()
 {
-    // TODO: handle absolute paths or not?
-    std::string formattedPath = fmt::format("{}/{}", GetGameRoot(), path);
-    return formattedPath;
+    static std::filesystem::path assetsRoot = GetGameRoot() / "assets";
+
+    return assetsRoot;
 }
 
-std::vector<u8> LoadFileInternal(const std::string formattedPath)
+std::vector<u8> LoadFileBytes(const std::filesystem::path& absolutePath)
 {
-    // things are gonna be weird on esoteric platforms, so assert just in case
-    static_assert(sizeof(char) == sizeof(u8));
+    CGT_ASSERT(absolutePath.is_absolute());
 
-    auto* fileRW = SDL_RWFromFile(formattedPath.c_str(), "rb");
-    CGT_ASSERT_ALWAYS_MSG(fileRW != nullptr, "Failed to open a file at: {}\nSDL Error: {}", formattedPath.c_str(), SDL_GetError());
+    std::ifstream stream(absolutePath);
+    CGT_ASSERT_ALWAYS_MSG(stream.is_open(), "Failed to open a file at: {}\n", absolutePath);
 
-    usize fileSize = 0;
-    void* fileData = SDL_LoadFile_RW(fileRW, &fileSize, true);
-    CGT_ASSERT_ALWAYS_MSG(fileData != nullptr, "Failed to load a file at: {}\nSDL Error: {}", formattedPath.c_str(), SDL_GetError());
+    stream.seekg(0, std::ios::end);
+    usize fileSize = stream.tellg();
+    stream.seekg(0, std::ios::beg);
 
     std::vector<u8> data(fileSize);
-    memcpy(data.data(), fileData, fileSize);
-    SDL_free(fileData);
+    stream.read((char*)data.data(), fileSize);
 
     return data;
+
 }
 
-std::vector<u8> LoadFile(const char* path)
+std::filesystem::path PrependAssetRoot(const std::filesystem::path& relativePath)
 {
-    const std::string formattedPath = FormatPath(path);
-    return LoadFileInternal(formattedPath);
+    CGT_ASSERT(relativePath.is_relative());
+
+    const auto absolutePath = GetAssetsRoot() / relativePath;
+    return absolutePath;
 }
 
-tmx_map* LoadTiledMap(const char* path)
+std::vector<u8> LoadAssetBytes(const std::filesystem::path& relativePath)
 {
-    const std::string formattedPath = FormatPath(path);
-    auto mapData = LoadFileInternal(formattedPath);
+    const auto absolutePath = PrependAssetRoot(relativePath);
+    return LoadFileBytes(absolutePath);
+}
+
+tmx_map* LoadTiledMap(const std::filesystem::path& relativePath)
+{
+    auto absolutePath = PrependAssetRoot(relativePath);
+    auto mapData = LoadFileBytes(absolutePath);
     tmx_map* map = tmx_load_buffer((char*)mapData.data(), mapData.size());
-    CGT_ASSERT_ALWAYS_MSG(map != nullptr, "Failed to load a tiled map at: {}\nTMX error: {}", formattedPath.c_str(), tmx_strerr());
+    CGT_ASSERT_ALWAYS_MSG(map != nullptr, "Failed to load a tiled map at: {}\nTMX error: {}", absolutePath, tmx_strerr());
 
     return map;
 }

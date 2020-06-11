@@ -6,6 +6,7 @@
 #include <vector>
 #include <unordered_map>
 #include <filesystem>
+#include <fstream>
 
 #define CGT_PANIC(fmtStr, ...)                                                                                      \
 do {                                                                                                                \

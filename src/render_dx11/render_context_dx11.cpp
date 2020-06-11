@@ -90,7 +90,7 @@ std::shared_ptr<RenderContextDX11> RenderContextDX11::BuildWithConfig(RenderConf
     CGT_CHECK_HRESULT(hresult, "Failed to create render target view!");
 
     ComPtr<ID3D10Blob> vertexShaderBlob = CompileShader(
-        "assets/engine/shaders/dx11/sprites.hlsl",
+        "engine/shaders/dx11/sprites.hlsl",
         "VSMain",
         "vs_4_0",
         nullptr);
@@ -103,7 +103,7 @@ std::shared_ptr<RenderContextDX11> RenderContextDX11::BuildWithConfig(RenderConf
     DirectX::SetDebugObjectName(context->m_VertexShader.Get(), "Sprite VS");
 
     ComPtr<ID3D10Blob> pixelShaderBlob = CompileShader(
-        "assets/engine/shaders/dx11/sprites.hlsl",
+        "engine/shaders/dx11/sprites.hlsl",
         "PSMain",
         "ps_4_0",
         nullptr);
@@ -353,7 +353,7 @@ RenderContextDX11::RenderContextDX11(std::shared_ptr<Window> window)
 
 TextureHandle RenderContextDX11::LoadTexture(const char* path)
 {
-    auto fileData = LoadFile(path);
+    auto fileData = LoadAssetBytes(path);
     auto newTexture = std::shared_ptr<TextureData>(new TextureData());
     HRESULT hresult = LoadTextureFromMemory(fileData.data(), fileData.size(), *newTexture);
     CGT_CHECK_HRESULT(hresult, "Couldn't create texture from file at {}", path);

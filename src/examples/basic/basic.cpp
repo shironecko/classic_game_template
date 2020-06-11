@@ -23,11 +23,6 @@ int GameMain()
     camera.windowHeight = window->GetHeight();
     camera.pixelsPerUnit = 16.0f;
 
-    auto tiledMap = cgt::Tilemap::LoadFrom(
-        "assets/examples/maps/sample_map.tmx",
-        *render,
-        "assets/examples/maps");
-
     cgt::Clock frameClock;
     SDL_Event event {};
     cgt::render::RenderStats renderStats{};
@@ -60,8 +55,6 @@ int GameMain()
 
         renderQueue.Reset();
         renderQueue.clearColor = glm::vec4(1.0f, 0.3f, 1.0f, 1.0f);
-
-        tiledMap->Render(renderQueue);
 
         renderStats = render->Submit(renderQueue, camera);
     }

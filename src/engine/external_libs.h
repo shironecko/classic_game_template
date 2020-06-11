@@ -2,6 +2,7 @@
 
 #include <SDL2/SDL.h>
 #include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <imgui.h>
 #include <tmx.h>
 #include <glm/glm.hpp>
