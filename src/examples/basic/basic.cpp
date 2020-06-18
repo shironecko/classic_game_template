@@ -55,6 +55,9 @@ int GameMain()
 
         renderQueue.Reset();
         renderQueue.clearColor = glm::vec4(1.0f, 0.3f, 1.0f, 1.0f);
+        cgt::render::SpriteDrawRequest testSprite;
+        testSprite.scale = {10.0f, 10.0f};
+        renderQueue.sprites.emplace_back(testSprite);
 
         renderStats = render->Submit(renderQueue, camera);
     }
