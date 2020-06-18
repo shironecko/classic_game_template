@@ -4,7 +4,8 @@ add_library(engine
     pch.cpp pch.h external_libs.h system.h
     assets.cpp assets.h
     tilemap.h tilemap.cpp
-    clock.cpp clock.h)
+    clock.cpp clock.h
+    api.h)
 
 target_compile_definitions(engine
     PUBLIC
