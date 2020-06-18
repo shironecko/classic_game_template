@@ -4,20 +4,30 @@
 
 namespace cgt
 {
+WindowConfig WindowConfig::Default() { return WindowConfig(); }
 
-WindowConfig::WindowConfig()
+WindowConfig WindowConfig::WithTitle(const char* title)
 {
-    // some hopefully sensible defaults
-    title = "Classic Game Template";
-    width = 1280;
-    height = 720;
-    resizable = false;
+    this->title = title;
+    return *this;
+}
+
+WindowConfig WindowConfig::WithDimensions(u32 width, u32 height)
+{
+    this->width = width;
+    this->height = height;
+    return *this;
+}
+
+std::shared_ptr<Window> WindowConfig::Build() const
+{
+    return Window::BuildWithConfig(*this);
 }
 
 std::shared_ptr<Window> Window::BuildWithConfig(const WindowConfig& config)
 {
     auto window = SDL_CreateWindow(
-        config.title,
+        config.title.c_str(),
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
         config.width,

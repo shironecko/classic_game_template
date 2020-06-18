@@ -10,22 +10,20 @@
 
 int GameMain()
 {
-    auto windowCfg = cgt::WindowConfig();
-    windowCfg.title = "Basic Example";
-    auto window = cgt::Window::BuildWithConfig(windowCfg);
+    auto window = cgt::WindowConfig::Default()
+        .WithTitle("Basic Example")
+        .Build();
 
-    auto renderCfg = cgt::render::RenderConfig(window);
-    auto render = cgt::render::IRenderContext::BuildWithConfig(renderCfg);
+    auto render= cgt::render::RenderConfig::Default(window)
+        .Build();
 
     cgt::render::RenderQueue renderQueue;
-    cgt::render::CameraSimpleOrtho camera;
-    camera.windowWidth = window->GetWidth();
-    camera.windowHeight = window->GetHeight();
+    cgt::render::CameraSimpleOrtho camera(*window);
     camera.pixelsPerUnit = 16.0f;
 
     cgt::Clock frameClock;
     SDL_Event event {};
-    cgt::render::RenderStats renderStats{};
+    cgt::render::RenderStats renderStats {};
     bool quitRequested = false;
     while (!quitRequested)
     {

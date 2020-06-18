@@ -3,15 +3,20 @@
 namespace cgt
 {
 
+class Window;
+
 class WindowConfig
 {
 public:
-    WindowConfig();
+    static WindowConfig Default();
 
-    const char* title;
-    u32 width;
-    u32 height;
-    bool resizable;
+    WindowConfig WithTitle(const char* title);
+    WindowConfig WithDimensions(u32 width, u32 height);
+    std::shared_ptr<Window> Build() const;
+    
+    std::string title = "Classic Game Template";
+    u32 width = 1280;
+    u32 height = 720;
 };
 
 class Window : private NonCopyable

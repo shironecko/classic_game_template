@@ -1,9 +1,15 @@
 #include <render_core/pch.h>
 
 #include <render_core/camera_simple_ortho.h>
+#include <engine/window.h>
 
 namespace cgt::render
 {
+CameraSimpleOrtho::CameraSimpleOrtho(const Window& window)
+{
+    windowWidth = window.GetWidth();
+    windowHeight = window.GetHeight();
+}
 
 glm::mat4 CameraSimpleOrtho::GetViewProjection() const
 {
