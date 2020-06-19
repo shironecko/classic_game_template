@@ -18,6 +18,7 @@ public:
     glm::mat4 GetViewProjection() const override;
 
     float pixelsPerUnit = 1.0f;
+    bool snapToPixel = true;
 
     glm::vec2 position = glm::vec2(0.0f);
 

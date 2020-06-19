@@ -263,7 +263,7 @@ RenderStats RenderContextDX11::Submit(RenderQueue& queue, const ICamera& camera)
     m_Context->VSSetConstantBuffers(0, 1, m_FrameConstants.GetAddressOf());
 
     m_Context->PSSetShader(m_PixelShader.Get(), nullptr, 0);
-    ID3D11SamplerState* sampler = m_CommonStates->LinearClamp();
+    ID3D11SamplerState* sampler = m_CommonStates->PointClamp();
     m_Context->PSSetSamplers(0, 1, &sampler);
 
     m_Context->OMSetBlendState(m_CommonStates->NonPremultiplied(), nullptr, 0xFFFFFFFF);
