@@ -318,10 +318,9 @@ RenderStats RenderContextDX11::Submit(RenderQueue& queue, const ICamera& camera)
                 break;
             }
 
-            const glm::mat4 translation = glm::translate(glm::mat4(1.0f), glm::vec3(sprite.position, sprite.depth / 255.0f));
-            const glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(sprite.scale, 1.0f));
-            const glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(sprite.rotation), glm::vec3(0.0f, 0.0f, 1.0f));
-            const glm::mat4 worldTransform = translation * rotation * scale;
+            glm::mat4 worldTransform = glm::translate(glm::mat4(1.0f), glm::vec3(sprite.position, sprite.depth / 255.0f));
+            worldTransform = glm::scale(worldTransform, glm::vec3(sprite.scale, 1.0f));
+            worldTransform = glm::rotate(worldTransform, glm::radians(sprite.rotation), glm::vec3(0.0f, 0.0f, 1.0f));
 
             const glm::vec2 uvScale(sprite.uvMax.x - sprite.uvMin.x, sprite.uvMax.y - sprite.uvMin.y);
             const glm::vec2 uvTranslation = glm::vec2(0.5f) * uvScale + sprite.uvMin; // add 0.5f * uvScale to remap back into [0, 1] range
