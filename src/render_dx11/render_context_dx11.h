@@ -56,9 +56,7 @@ private:
     ComPtr<ID3D11Buffer> m_QuadUV;
     ComPtr<ID3D11Buffer> m_QuadIndices;
 
-    ComPtr<ID3D11Buffer> m_InstanceWorldTransform;
-    ComPtr<ID3D11Buffer> m_InstanceUVTransform;
-    ComPtr<ID3D11Buffer> m_InstanceColor;
+    ComPtr<ID3D11Buffer> m_SpriteInstanceData;
 
     TextureData m_MissingTexture;
 };

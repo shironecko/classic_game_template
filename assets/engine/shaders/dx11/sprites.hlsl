@@ -1,42 +1,60 @@
-cbuffer cbPerFrame : register(b0) {
-	float4x4 viewProjection;
+cbuffer cbPerFrame : register(b0)
+{
+    float4x4 viewProjection;
 }
 
 Texture2D g_ColorTexture : register(t0);
 SamplerState g_ColorSampler : register(s0);
 
-struct VSInput {
-	// per vertex
-	float3 pos : POSITION;
-	float2 uv : TEXCOORD;
+struct VSInput
+{
+    // per vertex
+    float2 pos : QUAD_POSITION;
+    float2 uv : TEXCOORD;
 
-	// per instance
-	float4x4 worldTransform : WORLD;
-	float4 uvTransform : TEXCOORD_TRANSFORM; // xy - translation, zw - scale
-	float4 color : COLOR;
+    // per instance
+    float4 colorTint : COLOR;
+    float2 position : SPRITE_POSITION;
+    float2 uvMin : TEXCOORD_MIN;
+    float2 uvMax : TEXCOORD_MAX;
+    float2 scale : SCALE;
+    float rotation : ROTATION;
+    float depth : DEPTH;
 };
 
-struct PSInput {
-	float4 pos : SV_POSITION;
-	float4 color :COLOR;
-	float2 uv : TEXCOORD;
+struct PSInput
+{
+    float4 pos : SV_POSITION;
+    float4 colorTint : COLOR;
+    float2 uv : TEXCOORD;
 };
 
-PSInput VSMain(VSInput vin) {
-	PSInput vout;
+PSInput VSMain(VSInput vin)
+{
+    PSInput vout;
 
-	float4x4 mvp = mul(viewProjection, vin.worldTransform);
-	vout.pos = mul(mvp, float4(vin.pos, 1.0f));
+    float2 pos = vin.pos * vin.scale;
+    float angleCos = cos(vin.rotation);
+    float angleSin = sin(vin.rotation);
+    pos = float2(
+        angleCos * pos.x - angleSin * pos.y,
+        angleSin * pos.x + angleCos * pos.y);
+    pos += vin.position;
 
-	vout.uv = vin.uv * vin.uvTransform.zw + vin.uvTransform.xy;
+    vout.pos = mul(viewProjection, float4(pos, vin.depth, 1.0f));
 
-	vout.color = vin.color;
+    float2 uvScale = float2(vin.uvMax.x - vin.uvMin.x, vin.uvMax.y - vin.uvMin.y);
+    float2 uvTranslation = float2(0.5f, 0.5f) * uvScale + vin.uvMin;
+    vout.uv = vin.uv * uvScale + uvTranslation;
 
-	return vout;
+    vout.colorTint = vin.colorTint;
+
+    return vout;
 }
 
-float4 PSMain(PSInput pin) : SV_TARGET {
-	float4 textureColor = g_ColorTexture.Sample(g_ColorSampler, pin.uv);
+float4 PSMain(PSInput pin) : SV_TARGET
+{
+    float4 textureColor = g_ColorTexture.Sample(g_ColorSampler, pin.uv);
 
-	return textureColor * pin.color;
+    return textureColor * pin.colorTint;
 }

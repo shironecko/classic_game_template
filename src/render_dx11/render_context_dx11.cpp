@@ -11,6 +11,17 @@
 namespace cgt::render
 {
 
+struct SpriteInstanceData
+{
+    glm::vec4 colorTint;
+    glm::vec2 position;
+    glm::vec2 uvMin;
+    glm::vec2 uvMax;
+    glm::vec2 scale;
+    float rotation;
+    float depth;
+};
+
 std::shared_ptr<IRenderContext> IRenderContext::BuildWithConfig(RenderConfig config)
 {
     return RenderContextDX11::BuildWithConfig(std::move(config));
@@ -117,14 +128,17 @@ std::shared_ptr<RenderContextDX11> RenderContextDX11::BuildWithConfig(RenderConf
 
     const D3D11_INPUT_ELEMENT_DESC inputElementDesc[] =
         {
-            { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+            // per-vertex
+            { "QUAD_POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
             { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 1, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-            { "WORLD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 2, sizeof(glm::vec4) * 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-            { "WORLD", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 2, sizeof(glm::vec4) * 1, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-            { "WORLD", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 2, sizeof(glm::vec4) * 2, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-            { "WORLD", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 2, sizeof(glm::vec4) * 3, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-            { "TEXCOORD_TRANSFORM", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 3, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-            { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 4, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+            // per-instance
+            { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 2, offsetof(SpriteInstanceData, colorTint), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+            { "SPRITE_POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 2, offsetof(SpriteInstanceData, position), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+            { "TEXCOORD_MIN", 0, DXGI_FORMAT_R32G32_FLOAT, 2, offsetof(SpriteInstanceData, uvMin), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+            { "TEXCOORD_MAX", 0, DXGI_FORMAT_R32G32_FLOAT, 2, offsetof(SpriteInstanceData, uvMax), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+            { "SCALE", 0, DXGI_FORMAT_R32G32_FLOAT, 2, offsetof(SpriteInstanceData, scale), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+            { "ROTATION", 0, DXGI_FORMAT_R32_FLOAT, 2, offsetof(SpriteInstanceData, rotation), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+            { "DEPTH", 0, DXGI_FORMAT_R32_FLOAT, 2, offsetof(SpriteInstanceData, depth), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
         };
 
     hresult = context->m_Device->CreateInputLayout(
@@ -138,10 +152,10 @@ std::shared_ptr<RenderContextDX11> RenderContextDX11::BuildWithConfig(RenderConf
 
     const float quadVertices[] =
         {
-            -0.5f, 0.5f, 0.0f,
-            0.5f, 0.5f, 0.0f,
-            0.5f, -0.5f, 0.0f,
-            -0.5f, -0.5f, 0.0f
+            -0.5f, 0.5f,
+            0.5f, 0.5f,
+            0.5f, -0.5f,
+            -0.5f, -0.5f,
         };
     context->m_QuadVertices = CreateStaticBuffer(
         context->m_Device.Get(),
@@ -177,32 +191,14 @@ std::shared_ptr<RenderContextDX11> RenderContextDX11::BuildWithConfig(RenderConf
         D3D11_BIND_INDEX_BUFFER);
     DirectX::SetDebugObjectName(context->m_QuadIndices.Get(), "Quad Indices");
 
-    context->m_InstanceWorldTransform = CreateBuffer(
+    context->m_SpriteInstanceData = CreateBuffer(
         context->m_Device.Get(),
         nullptr,
-        sizeof(glm::mat4) * MAX_BATCH_SIZE,
+        sizeof(SpriteInstanceData) * MAX_BATCH_SIZE,
         D3D11_BIND_VERTEX_BUFFER,
         D3D11_USAGE_DYNAMIC,
         D3D11_CPU_ACCESS_WRITE);
-    DirectX::SetDebugObjectName(context->m_InstanceWorldTransform.Get(), "Sprite Instance World Transform");
-
-    context->m_InstanceUVTransform = CreateBuffer(
-        context->m_Device.Get(),
-        nullptr,
-        sizeof(glm::vec4) * MAX_BATCH_SIZE,
-        D3D11_BIND_VERTEX_BUFFER,
-        D3D11_USAGE_DYNAMIC,
-        D3D11_CPU_ACCESS_WRITE);
-    DirectX::SetDebugObjectName(context->m_InstanceUVTransform.Get(), "Sprite Instance UV Transform");
-
-    context->m_InstanceColor = CreateBuffer(
-        context->m_Device.Get(),
-        nullptr,
-        sizeof(glm::vec4) * MAX_BATCH_SIZE,
-        D3D11_BIND_VERTEX_BUFFER,
-        D3D11_USAGE_DYNAMIC,
-        D3D11_CPU_ACCESS_WRITE);
-    DirectX::SetDebugObjectName(context->m_InstanceColor.Get(), "Sprite Instance Color");
+    DirectX::SetDebugObjectName(context->m_SpriteInstanceData.Get(), "Sprite Instance Data");
 
     context->m_FrameConstants = CreateBuffer(
         context->m_Device.Get(),
@@ -244,20 +240,16 @@ RenderStats RenderContextDX11::Submit(RenderQueue& queue, const ICamera& camera)
 
         const UINT strides[] =
             {
-                sizeof(glm::vec3), // POSITION
+                sizeof(glm::vec2), // POSITION
                 sizeof(glm::vec2), // TEXCOORD
-                sizeof(glm::mat4), // WORLD
-                sizeof(glm::vec4), // TEXCOORD_TRANSFORM
-                sizeof(glm::vec4) // COLOR
+                sizeof(SpriteInstanceData),
             };
-        const UINT offsets[] = { 0, 0, 0, 0, 0 };
+        const UINT offsets[] = { 0, 0, 0, };
         ID3D11Buffer* buffers[] =
             {
                 m_QuadVertices.Get(),
                 m_QuadUV.Get(),
-                m_InstanceWorldTransform.Get(),
-                m_InstanceUVTransform.Get(),
-                m_InstanceColor.Get()
+                m_SpriteInstanceData.Get(),
             };
         m_Context->IASetVertexBuffers(0, SDL_arraysize(buffers), buffers, strides, offsets);
 
@@ -296,17 +288,9 @@ RenderStats RenderContextDX11::Submit(RenderQueue& queue, const ICamera& camera)
         auto* currentTexture = GetSpriteTexture(queue.sprites[spriteIdx]);
         m_Context->PSSetShaderResources(0, 1, &currentTexture);
 
-        D3D11_MAPPED_SUBRESOURCE worldTransformSubres{};
-        m_Context->Map(m_InstanceWorldTransform.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &worldTransformSubres);
-        auto* worldTransformBuff = (glm::mat4*)worldTransformSubres.pData;
-
-        D3D11_MAPPED_SUBRESOURCE uvTransformSubres{};
-        m_Context->Map(m_InstanceUVTransform.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &uvTransformSubres);
-        auto* uvTransformBuff = (glm::vec4*)uvTransformSubres.pData;
-
-        D3D11_MAPPED_SUBRESOURCE colorSubres{};
-        m_Context->Map(m_InstanceColor.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &colorSubres);
-        auto* colorBuff = (glm::vec4*)colorSubres.pData;
+        D3D11_MAPPED_SUBRESOURCE spriteInstanceSubres {};
+        m_Context->Map(m_SpriteInstanceData.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &spriteInstanceSubres);
+        auto* spriteInstanceBuff = (SpriteInstanceData*)spriteInstanceSubres.pData;
 
         usize spritesInBatch = 0;
         do
@@ -318,25 +302,20 @@ RenderStats RenderContextDX11::Submit(RenderQueue& queue, const ICamera& camera)
                 break;
             }
 
-            glm::mat4 worldTransform = glm::translate(glm::mat4(1.0f), glm::vec3(sprite.position, sprite.depth / 255.0f));
-            worldTransform = glm::scale(worldTransform, glm::vec3(sprite.scale, 1.0f));
-            worldTransform = glm::rotate(worldTransform, glm::radians(sprite.rotation), glm::vec3(0.0f, 0.0f, 1.0f));
-
-            const glm::vec2 uvScale(sprite.uvMax.x - sprite.uvMin.x, sprite.uvMax.y - sprite.uvMin.y);
-            const glm::vec2 uvTranslation = glm::vec2(0.5f) * uvScale + sprite.uvMin; // add 0.5f * uvScale to remap back into [0, 1] range
-            const glm::vec4 uvTransform(uvTranslation, uvScale);
-
-            worldTransformBuff[spritesInBatch] = worldTransform;
-            uvTransformBuff[spritesInBatch] = uvTransform;
-            colorBuff[spritesInBatch] = sprite.colorTint;
+            auto& spriteInstance = spriteInstanceBuff[spritesInBatch];
+            spriteInstance.colorTint = sprite.colorTint;
+            spriteInstance.position = sprite.position;
+            spriteInstance.uvMin = sprite.uvMin;
+            spriteInstance.uvMax = sprite.uvMax;
+            spriteInstance.scale = sprite.scale;
+            spriteInstance.rotation = glm::radians(sprite.rotation);
+            spriteInstance.depth = (float)sprite.depth / 255.0f;
 
             ++spriteIdx;
             ++spritesInBatch;
         } while (spritesInBatch < MAX_BATCH_SIZE && spriteIdx < queue.sprites.size());
 
-        m_Context->Unmap(m_InstanceWorldTransform.Get(), 0);
-        m_Context->Unmap(m_InstanceUVTransform.Get(), 0);
-        m_Context->Unmap(m_InstanceColor.Get(), 0);
+        m_Context->Unmap(m_SpriteInstanceData.Get(), 0);
 
         ++stats.drawcallCount;
         m_Context->DrawIndexedInstanced(6, spritesInBatch, 0, 0, 0);
