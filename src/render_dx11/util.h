@@ -4,7 +4,7 @@ namespace cgt::render
 {
 
 ComPtr<ID3D10Blob>
-CompileShader(const std::filesystem::path& path, const char* entryPoint, const char* profile, const D3D_SHADER_MACRO* defines);
+CompileShader(const std::filesystem::path& absolutePath, const char* entryPoint, const char* profile, const D3D_SHADER_MACRO* defines);
 
 ComPtr<ID3D11Buffer>
 CreateBuffer(ID3D11Device* device, const void* data, usize size, UINT bindFlags, D3D11_USAGE usage, u32 cpuFlags);

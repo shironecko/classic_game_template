@@ -45,11 +45,18 @@ const std::filesystem::path& GetAssetsRoot()
     return assetsRoot;
 }
 
+std::filesystem::path AssetPath(const std::filesystem::path& relativePath)
+{
+    CGT_ASSERT(relativePath.is_relative());
+
+    return GetAssetsRoot() / relativePath;
+}
+
 std::vector<u8> LoadFileBytes(const std::filesystem::path& absolutePath)
 {
     CGT_ASSERT(absolutePath.is_absolute());
 
-    std::ifstream stream(absolutePath);
+    std::ifstream stream(absolutePath, std::ios::in | std::ios::binary);
     CGT_ASSERT_ALWAYS_MSG(stream.is_open(), "Failed to open a file at: {}\n", absolutePath);
 
     stream.seekg(0, std::ios::end);
@@ -69,12 +76,6 @@ std::filesystem::path PrependAssetRoot(const std::filesystem::path& relativePath
 
     const auto absolutePath = GetAssetsRoot() / relativePath;
     return absolutePath;
-}
-
-std::vector<u8> LoadAssetBytes(const std::filesystem::path& relativePath)
-{
-    const auto absolutePath = PrependAssetRoot(relativePath);
-    return LoadFileBytes(absolutePath);
 }
 
 tmx_map* LoadTiledMap(const std::filesystem::path& relativePath)

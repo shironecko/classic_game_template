@@ -25,7 +25,7 @@ public:
     static std::shared_ptr<RenderContextDX11> BuildWithConfig(RenderConfig config);
 
     RenderStats Submit(RenderQueue& queue, const ICamera& camera) override;
-    TextureHandle LoadTexture(const char* path) override;
+    TextureHandle LoadTexture(const std::filesystem::path& absolutePath) override;
 
     void NewFrame() override;
 

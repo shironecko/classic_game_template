@@ -7,13 +7,13 @@ namespace cgt::render
 {
 
 ComPtr<ID3D10Blob>
-CompileShader(const std::filesystem::path& path, const char* entryPoint, const char* profile, const D3D_SHADER_MACRO* defines)
+CompileShader(const std::filesystem::path& absolutePath, const char* entryPoint, const char* profile, const D3D_SHADER_MACRO* defines)
 {
     CGT_ASSERT(entryPoint && profile);
 
-    auto shaderData = LoadAssetBytes(path);
+    auto shaderData = LoadFileBytes(absolutePath);
 
-    std::string utf8Path = path.u8string();
+    std::string utf8Path = absolutePath.u8string();
     ComPtr<ID3D10Blob> shader;
     ComPtr<ID3D10Blob> errors;
     HRESULT hresult = D3DCompile(
@@ -32,7 +32,7 @@ CompileShader(const std::filesystem::path& path, const char* entryPoint, const c
     if (!SUCCEEDED(hresult))
     {
         const char* err = (const char*)errors->GetBufferPointer();
-        CGT_PANIC("Failed to compile a shader at: {}!\nErrors:\n{}", path, err);
+        CGT_PANIC("Failed to compile a shader at: {}!\nErrors:\n{}", absolutePath, err);
     }
 
     return shader;
