@@ -218,61 +218,69 @@ std::shared_ptr<RenderContextDX11> RenderContextDX11::BuildWithConfig(RenderConf
 
 RenderStats RenderContextDX11::Submit(RenderQueue& queue, const ICamera& camera)
 {
+    ZoneScoped;
+
     RenderStats stats {};
-    stats.spriteCount = queue.sprites.size();
-
-    D3D11_VIEWPORT viewport {};
-    viewport.TopLeftX = 0.0f;
-    viewport.TopLeftY = 0.0f;
-    viewport.Width = (float)m_Window->GetWidth();
-    viewport.Height = (float)m_Window->GetHeight();
-    viewport.MinDepth = 0.0f;
-    viewport.MaxDepth = 1.0f;
-    m_Context->RSSetViewports(1, &viewport);
-    m_Context->RSSetState(m_CommonStates->CullNone());
-
-    m_Context->OMSetRenderTargets(1, m_RTView.GetAddressOf(), nullptr);
-    m_Context->ClearRenderTargetView(m_RTView.Get(), &queue.clearColor.x);
-
-    m_Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    m_Context->IASetIndexBuffer(m_QuadIndices.Get(), DXGI_FORMAT_R16_UINT, 0);
-    m_Context->IASetInputLayout(m_InputLayout.Get());
-
-    const UINT strides[] =
-        {
-            sizeof(glm::vec3), // POSITION
-            sizeof(glm::vec2), // TEXCOORD
-            sizeof(glm::mat4), // WORLD
-            sizeof(glm::vec4), // TEXCOORD_TRANSFORM
-            sizeof(glm::vec4) // COLOR
-        };
-    const UINT offsets[] = { 0, 0, 0, 0, 0 };
-    ID3D11Buffer* buffers[] =
-        {
-            m_QuadVertices.Get(),
-            m_QuadUV.Get(),
-            m_InstanceWorldTransform.Get(),
-            m_InstanceUVTransform.Get(),
-            m_InstanceColor.Get()
-        };
-    m_Context->IASetVertexBuffers(0, SDL_arraysize(buffers), buffers, strides, offsets);
-
-    m_Context->VSSetShader(m_VertexShader.Get(), nullptr, 0);
-    glm::mat4 viewProjection = camera.GetViewProjection();
-    UpdateBuffer(m_Context.Get(), m_FrameConstants.Get(), viewProjection);
-    m_Context->VSSetConstantBuffers(0, 1, m_FrameConstants.GetAddressOf());
-
-    m_Context->PSSetShader(m_PixelShader.Get(), nullptr, 0);
-    ID3D11SamplerState* sampler = m_CommonStates->PointClamp();
-    m_Context->PSSetSamplers(0, 1, &sampler);
-
-    m_Context->OMSetBlendState(m_CommonStates->NonPremultiplied(), nullptr, 0xFFFFFFFF);
-    m_Context->OMSetDepthStencilState(m_CommonStates->DepthNone(), 0);
-
-    std::sort(queue.sprites.begin(), queue.sprites.end(), [](const SpriteDrawRequest& a, const SpriteDrawRequest& b)
     {
-        return a.depth < b.depth || a.texture != b.texture;
-    });
+        ZoneScopedN("Setup");
+        stats.spriteCount = queue.sprites.size();
+
+        D3D11_VIEWPORT viewport {};
+        viewport.TopLeftX = 0.0f;
+        viewport.TopLeftY = 0.0f;
+        viewport.Width = (float)m_Window->GetWidth();
+        viewport.Height = (float)m_Window->GetHeight();
+        viewport.MinDepth = 0.0f;
+        viewport.MaxDepth = 1.0f;
+        m_Context->RSSetViewports(1, &viewport);
+        m_Context->RSSetState(m_CommonStates->CullNone());
+
+        m_Context->OMSetRenderTargets(1, m_RTView.GetAddressOf(), nullptr);
+        m_Context->ClearRenderTargetView(m_RTView.Get(), &queue.clearColor.x);
+
+        m_Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        m_Context->IASetIndexBuffer(m_QuadIndices.Get(), DXGI_FORMAT_R16_UINT, 0);
+        m_Context->IASetInputLayout(m_InputLayout.Get());
+
+        const UINT strides[] =
+            {
+                sizeof(glm::vec3), // POSITION
+                sizeof(glm::vec2), // TEXCOORD
+                sizeof(glm::mat4), // WORLD
+                sizeof(glm::vec4), // TEXCOORD_TRANSFORM
+                sizeof(glm::vec4) // COLOR
+            };
+        const UINT offsets[] = { 0, 0, 0, 0, 0 };
+        ID3D11Buffer* buffers[] =
+            {
+                m_QuadVertices.Get(),
+                m_QuadUV.Get(),
+                m_InstanceWorldTransform.Get(),
+                m_InstanceUVTransform.Get(),
+                m_InstanceColor.Get()
+            };
+        m_Context->IASetVertexBuffers(0, SDL_arraysize(buffers), buffers, strides, offsets);
+
+        m_Context->VSSetShader(m_VertexShader.Get(), nullptr, 0);
+        glm::mat4 viewProjection = camera.GetViewProjection();
+        UpdateBuffer(m_Context.Get(), m_FrameConstants.Get(), viewProjection);
+        m_Context->VSSetConstantBuffers(0, 1, m_FrameConstants.GetAddressOf());
+
+        m_Context->PSSetShader(m_PixelShader.Get(), nullptr, 0);
+        ID3D11SamplerState* sampler = m_CommonStates->PointClamp();
+        m_Context->PSSetSamplers(0, 1, &sampler);
+
+        m_Context->OMSetBlendState(m_CommonStates->NonPremultiplied(), nullptr, 0xFFFFFFFF);
+        m_Context->OMSetDepthStencilState(m_CommonStates->DepthNone(), 0);
+    }
+
+    {
+        ZoneScopedN("Sort");
+        std::sort(queue.sprites.begin(), queue.sprites.end(), [](const SpriteDrawRequest& a, const SpriteDrawRequest& b)
+        {
+            return a.depth < b.depth || a.texture != b.texture;
+        });
+    }
 
     auto GetSpriteTexture = [this](const SpriteDrawRequest& sprite)
     {
@@ -283,6 +291,8 @@ RenderStats RenderContextDX11::Submit(RenderQueue& queue, const ICamera& camera)
 
     for (usize spriteIdx = 0; spriteIdx < queue.sprites.size();)
     {
+        ZoneScopedN("Drawcall");
+
         auto* currentTexture = GetSpriteTexture(queue.sprites[spriteIdx]);
         m_Context->PSSetShaderResources(0, 1, &currentTexture);
 
@@ -333,10 +343,18 @@ RenderStats RenderContextDX11::Submit(RenderQueue& queue, const ICamera& camera)
         m_Context->DrawIndexedInstanced(6, spritesInBatch, 0, 0, 0);
     }
 
-    ImGui::Render();
-    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+    {
+        ZoneScopedN("ImGui::Render");
+        ImGui::Render();
+        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+    }
 
-    m_Swapchain->Present(0, 0);
+    {
+        ZoneScopedN("Present");
+        m_Swapchain->Present(0, 0);
+    }
+
+    FrameMark; // notify Tracy Profiler that the frame was rendered
 
     return stats;
 }

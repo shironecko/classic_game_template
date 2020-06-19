@@ -11,3 +11,4 @@
 #include <bindings/imgui_impl_sdl.h>
 
 #include <engine/extern/tileson.hpp>
+#include <engine/extern/tracy/Tracy.hpp>

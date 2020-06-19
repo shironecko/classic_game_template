@@ -34,6 +34,8 @@ int GameMain()
     bool quitRequested = false;
     while (!quitRequested)
     {
+        ZoneScopedN("Main Loop");
+
         const float dt = clock.Tick();
 
         render->NewFrame();
@@ -101,6 +103,8 @@ int GameMain()
 
         for (auto& layer: map.getLayers())
         {
+            ZoneScopedN("Layer Render");
+
             if (layer.getType() != tson::LayerType::TileLayer)
             {
                 continue;

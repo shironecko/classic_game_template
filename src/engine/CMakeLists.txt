@@ -11,6 +11,8 @@ target_compile_definitions(engine
     PUBLIC
     GLM_FORCE_DEPTH_ZERO_TO_ONE
     GLM_FORCE_LEFT_HANDED
+    TRACY_ENABLE
+    _WINSOCKAPI_
     NOMINMAX)
 
 find_package(SDL2 CONFIG REQUIRED)
