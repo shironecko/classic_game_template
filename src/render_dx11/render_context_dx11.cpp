@@ -332,6 +332,9 @@ RenderStats RenderContextDX11::Submit(RenderQueue& queue, const ICamera& camera)
         m_Swapchain->Present(0, 0);
     }
 
+    TracyPlot("Sprites", (i64)stats.spriteCount);
+    TracyPlot("Drawcalls", (i64)stats.drawcallCount);
+
     FrameMark; // notify Tracy Profiler that the frame was rendered
 
     return stats;
