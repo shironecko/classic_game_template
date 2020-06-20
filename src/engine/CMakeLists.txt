@@ -5,7 +5,8 @@ add_library(engine
     assets.cpp assets.h
     tilemap.h tilemap.cpp
     clock.cpp clock.h
-    api.h)
+    api.h
+    extern/tracy/TracyClient.cpp)
 
 target_compile_definitions(engine
     PUBLIC
