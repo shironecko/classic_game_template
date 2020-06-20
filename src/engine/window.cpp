@@ -34,11 +34,6 @@ std::shared_ptr<Window> Window::BuildWithConfig(const WindowConfig& config)
         config.height,
         SDL_WINDOW_SHOWN);
 
-    ImGui::CreateContext();
-
-    // the fuck? when did standard SDL2 bindings has started requiring specification of a concrete render backend?
-    ImGui_ImplSDL2_InitForD3D(window);
-
     Window* windowWrapper = new Window(window);
     return std::shared_ptr<Window>(windowWrapper);
 }
@@ -50,7 +45,6 @@ Window::Window(SDL_Window* window)
 
 Window::~Window()
 {
-    ImGui_ImplSDL2_Shutdown();
     SDL_DestroyWindow(m_Window);
 }
 
@@ -75,9 +69,4 @@ u32 Window::GetHeight() const
     return height;
 }
 
-void Window::NewFrame()
-{
-    ImGui_ImplSDL2_NewFrame(m_Window);
-    ImGui::NewFrame();
-}
 }

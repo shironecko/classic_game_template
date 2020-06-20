@@ -9,6 +9,8 @@ int GameMain()
     auto render = cgt::render::RenderConfig::Default(window)
         .Build();
 
+    auto imguiHelper = cgt::ImGuiHelper::Create(window, render);
+
     const float basePPU = 64.0f;
     const float SCALE_FACTORS[] = { 4.0f, 3.0f, 2.0f, 1.0f, 1.0f / 2.0f, 1.0f / 3.0f, 1.0f / 4.0f };
     i32 scaleFactorIdx = 3;
@@ -37,9 +39,7 @@ int GameMain()
         ZoneScopedN("Main Loop");
 
         const float dt = clock.Tick();
-
-        render->NewFrame();
-        window->NewFrame();
+        imguiHelper->NewFrame(dt);
 
         {
             ImGui::SetNextWindowSize({200, 80}, ImGuiCond_FirstUseEver);
@@ -140,6 +140,11 @@ int GameMain()
         }
 
         renderStats = render->Submit(renderQueue, camera);
+        imguiHelper->RenderUi();
+        render->Present();
+
+        TracyPlot("Sprites", (i64)renderStats.spriteCount);
+        TracyPlot("Drawcalls", (i64)renderStats.drawcallCount);
     }
 
     return 0;

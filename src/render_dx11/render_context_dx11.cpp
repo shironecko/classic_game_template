@@ -47,8 +47,6 @@ std::shared_ptr<RenderContextDX11> RenderContextDX11::BuildWithConfig(RenderConf
         &featureLevel,
         context->m_Context.GetAddressOf());
 
-    ImGui_ImplDX11_Init(context->m_Device.Get(), context->m_Context.Get());
-
     CGT_CHECK_HRESULT(hresult, "Failed to create D3D11 Device and Context!");
     CGT_ASSERT_ALWAYS_MSG(featureLevel == D3D_FEATURE_LEVEL_11_0, "D3D Feature Level 11 is not supported!");
 
@@ -321,26 +319,37 @@ RenderStats RenderContextDX11::Submit(RenderQueue& queue, const ICamera& camera)
         m_Context->DrawIndexedInstanced(6, spritesInBatch, 0, 0, 0);
     }
 
-    {
-        ZoneScopedN("ImGui::Render");
-        ImGui::Render();
-        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-    }
-
-    {
-        ZoneScopedN("Present");
-        m_Swapchain->Present(0, 0);
-    }
-
-    TracyPlot("Sprites", (i64)stats.spriteCount);
-    TracyPlot("Drawcalls", (i64)stats.drawcallCount);
-
-    FrameMark; // notify Tracy Profiler that the frame was rendered
 
     return stats;
 }
 
-RenderContextDX11::~RenderContextDX11()
+void RenderContextDX11::Present()
+{
+    {
+        ZoneScoped;
+        m_Swapchain->Present(0, 0);
+    }
+
+    FrameMark; // notify Tracy Profiler that the frame was rendered
+}
+
+void RenderContextDX11::ImGuiBindingsInit()
+{
+    ImGui_ImplDX11_Init(m_Device.Get(), m_Context.Get());
+}
+
+void RenderContextDX11::ImGuiBindingsNewFrame()
+{
+    ImGui_ImplDX11_NewFrame();
+}
+
+void RenderContextDX11::ImGuiBindingsRender(ImDrawData* drawData)
+{
+    ZoneScoped;
+    ImGui_ImplDX11_RenderDrawData(drawData);
+}
+
+void RenderContextDX11::ImGuiBindingsShutdown()
 {
     ImGui_ImplDX11_Shutdown();
 }
@@ -358,11 +367,6 @@ TextureHandle RenderContextDX11::LoadTexture(const std::filesystem::path& absolu
     CGT_CHECK_HRESULT(hresult, "Couldn't create texture from file at {}", absolutePath);
 
     return newTexture;
-}
-
-void RenderContextDX11::NewFrame()
-{
-    ImGui_ImplDX11_NewFrame();
 }
 
 HRESULT RenderContextDX11::LoadTextureFromMemory(const u8* data, usize size, TextureData& outData)

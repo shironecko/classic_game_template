@@ -24,12 +24,16 @@ class RenderContextDX11 : public IRenderContext, private NonCopyable
 public:
     static std::shared_ptr<RenderContextDX11> BuildWithConfig(RenderConfig config);
 
-    RenderStats Submit(RenderQueue& queue, const ICamera& camera) override;
     TextureHandle LoadTexture(const std::filesystem::path& absolutePath) override;
 
-    void NewFrame() override;
+    RenderStats Submit(RenderQueue& queue, const ICamera& camera) override;
+    void Present() override;
 
-    ~RenderContextDX11() override;
+protected:
+    void ImGuiBindingsInit() override;
+    void ImGuiBindingsNewFrame() override;
+    void ImGuiBindingsRender(ImDrawData* drawData) override;
+    void ImGuiBindingsShutdown() override;
 
 private:
     static constexpr usize MAX_BATCH_SIZE = 1024;

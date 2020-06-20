@@ -10,6 +10,8 @@ int GameMain()
     auto render= cgt::render::RenderConfig::Default(window)
         .Build();
 
+    auto imguiHelper = cgt::ImGuiHelper::Create(window, render);
+
     cgt::render::RenderQueue renderQueue;
     cgt::render::CameraSimpleOrtho camera(*window);
     camera.pixelsPerUnit = 16.0f;
@@ -22,8 +24,7 @@ int GameMain()
     {
         const float dt = frameClock.Tick();
 
-        render->NewFrame();
-        window->NewFrame();
+        imguiHelper->NewFrame(dt);
 
         while (window->PollEvent(event))
         {
@@ -51,6 +52,8 @@ int GameMain()
         renderQueue.sprites.emplace_back(testSprite);
 
         renderStats = render->Submit(renderQueue, camera);
+        imguiHelper->RenderUi();
+        render->Present();
     }
 
     return 0;

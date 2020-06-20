@@ -20,12 +20,20 @@ public:
     // meant to be implemented by concrete rendering libraries
     static std::shared_ptr<IRenderContext> BuildWithConfig(RenderConfig config);
 
-    virtual RenderStats Submit(RenderQueue& queue, const ICamera& camera) = 0;
     virtual TextureHandle LoadTexture(const std::filesystem::path& absolutePath) = 0;
 
-    virtual void NewFrame() = 0;
+    virtual RenderStats Submit(RenderQueue& queue, const ICamera& camera) = 0;
+    virtual void Present() = 0;
 
     virtual ~IRenderContext() = default;
+
+protected:
+    friend class ImGuiHelper;
+
+    virtual void ImGuiBindingsInit() = 0;
+    virtual void ImGuiBindingsNewFrame() = 0;
+    virtual void ImGuiBindingsRender(ImDrawData* drawData) = 0;
+    virtual void ImGuiBindingsShutdown() = 0;
 };
 
 }

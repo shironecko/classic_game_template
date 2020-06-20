@@ -5,6 +5,7 @@ add_library(engine
     assets.cpp assets.h
     tilemap.h tilemap.cpp
     clock.cpp clock.h
+    imgui_helper.cpp imgui_helper.h
     api.h
     extern/tracy/TracyClient.cpp)
 
