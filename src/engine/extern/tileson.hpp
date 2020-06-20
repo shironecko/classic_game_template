@@ -24265,7 +24265,7 @@ void tson::Layer::createTileData(const Vector2i &mapSize, bool isInfiniteMap)
 
 			if (tileId > 0)
 			{
-				m_tileData[{x, y}] = m_tileMap[tileId];
+				m_tileData[{(int)x, (int)y}] = m_tileMap[tileId];
 			}
 			x++;
 		});
