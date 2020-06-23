@@ -7,7 +7,8 @@ add_library(engine
     clock.cpp clock.h
     imgui_helper.cpp imgui_helper.h
     api.h
-    extern/tracy/TracyClient.cpp)
+    extern/tracy/TracyClient.cpp
+    extern/im3d/im3d.cpp)
 
 target_compile_definitions(engine
     PUBLIC

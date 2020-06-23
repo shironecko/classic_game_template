@@ -24,7 +24,7 @@ int GameMain()
     {
         const float dt = frameClock.Tick();
 
-        imguiHelper->NewFrame(dt);
+        imguiHelper->NewFrame(dt, camera);
 
         while (window->PollEvent(event))
         {
@@ -52,7 +52,7 @@ int GameMain()
         renderQueue.sprites.emplace_back(testSprite);
 
         renderStats = render->Submit(renderQueue, camera);
-        imguiHelper->RenderUi();
+        imguiHelper->RenderUi(camera);
         render->Present();
     }
 

@@ -34,6 +34,11 @@ protected:
     virtual void ImGuiBindingsNewFrame() = 0;
     virtual void ImGuiBindingsRender(ImDrawData* drawData) = 0;
     virtual void ImGuiBindingsShutdown() = 0;
+
+    virtual void Im3dBindingsInit() = 0;
+    virtual void Im3dBindingsNewFrame() = 0;
+    virtual void Im3dBindingsRender(const ICamera& camera) = 0;
+    virtual void Im3dBindingsShutdown() = 0;
 };
 
 }

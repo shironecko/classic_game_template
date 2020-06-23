@@ -1,6 +1,7 @@
 #include <render_dx11/pch.h>
 
 #include <render_dx11/render_context_dx11.h>
+#include <render_dx11/im3d_dx11.h>
 #include <render_dx11/util.h>
 #include <engine/assets.h>
 
@@ -251,6 +252,8 @@ RenderStats RenderContextDX11::Submit(RenderQueue& queue, const ICamera& camera)
             };
         m_Context->IASetVertexBuffers(0, SDL_arraysize(buffers), buffers, strides, offsets);
 
+        m_Context->GSSetShader(nullptr, nullptr, 0);
+
         m_Context->VSSetShader(m_VertexShader.Get(), nullptr, 0);
         glm::mat4 viewProjection = camera.GetViewProjection();
         UpdateBuffer(m_Context.Get(), m_FrameConstants.Get(), viewProjection);
@@ -352,6 +355,23 @@ void RenderContextDX11::ImGuiBindingsRender(ImDrawData* drawData)
 void RenderContextDX11::ImGuiBindingsShutdown()
 {
     ImGui_ImplDX11_Shutdown();
+}
+
+void RenderContextDX11::Im3dBindingsInit()
+{
+    m_Im3dRender = std::make_unique<Im3dDx11>(m_Device, m_Context);
+}
+
+void RenderContextDX11::Im3dBindingsNewFrame() {}
+
+void RenderContextDX11::Im3dBindingsRender(const ICamera& camera)
+{
+    m_Im3dRender->Render(camera, m_Window->GetWidth(), m_Window->GetHeight());
+}
+
+void RenderContextDX11::Im3dBindingsShutdown()
+{
+    m_Im3dRender.reset();
 }
 
 RenderContextDX11::RenderContextDX11(std::shared_ptr<Window> window)

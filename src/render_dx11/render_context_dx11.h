@@ -8,6 +8,8 @@
 namespace cgt::render
 {
 
+class Im3dDx11;
+
 class TextureData : private NonCopyable
 {
 private:
@@ -34,6 +36,11 @@ protected:
     void ImGuiBindingsNewFrame() override;
     void ImGuiBindingsRender(ImDrawData* drawData) override;
     void ImGuiBindingsShutdown() override;
+
+    void Im3dBindingsInit() override;
+    void Im3dBindingsNewFrame() override;
+    void Im3dBindingsRender(const ICamera& camera) override;
+    void Im3dBindingsShutdown() override;
 
 private:
     static constexpr usize MAX_BATCH_SIZE = 1024;
@@ -63,6 +70,8 @@ private:
     ComPtr<ID3D11Buffer> m_SpriteInstanceData;
 
     TextureData m_MissingTexture;
+
+    std::unique_ptr<Im3dDx11> m_Im3dRender;
 };
 
 }

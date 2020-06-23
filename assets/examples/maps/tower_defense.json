@@ -92,6 +92,12 @@
                          "x":3072,
                          "y":1984
                         }],
+                 "properties":[
+                        {
+                         "name":"PlayerColor",
+                         "type":"color",
+                         "value":"#ffaa00ff"
+                        }],
                  "rotation":180,
                  "type":"",
                  "visible":true,
@@ -159,6 +165,12 @@
                         {
                          "x":3072,
                          "y":2112
+                        }],
+                 "properties":[
+                        {
+                         "name":"PlayerColor",
+                         "type":"color",
+                         "value":"#ffff0000"
                         }],
                  "rotation":0,
                  "type":"",
@@ -228,6 +240,12 @@
                          "x":3072,
                          "y":2048
                         }],
+                 "properties":[
+                        {
+                         "name":"PlayerColor",
+                         "type":"color",
+                         "value":"#ff0000ff"
+                        }],
                  "rotation":-180,
                  "type":"",
                  "visible":true,
@@ -295,6 +313,12 @@
                         {
                          "x":3136,
                          "y":2048
+                        }],
+                 "properties":[
+                        {
+                         "name":"PlayerColor",
+                         "type":"color",
+                         "value":"#ff00ff00"
                         }],
                  "rotation":360,
                  "type":"",

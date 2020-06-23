@@ -11,10 +11,10 @@ CameraSimpleOrtho::CameraSimpleOrtho(const Window& window)
     windowHeight = window.GetHeight();
 }
 
-glm::mat4 CameraSimpleOrtho::GetViewProjection() const
+glm::mat4 CameraSimpleOrtho::GetView() const
 {
-    glm::vec2 snappedPosition = position;
     const float unitsPerPixel = 1.0f / pixelsPerUnit;
+    glm::vec2 snappedPosition = position;
     if (snapToPixel)
     {
         snappedPosition.x = glm::trunc(snappedPosition.x / unitsPerPixel) * unitsPerPixel;
@@ -26,6 +26,13 @@ glm::mat4 CameraSimpleOrtho::GetViewProjection() const
         glm::vec3(snappedPosition, 0.0f),
         glm::vec3(0.0f, 1.0f, 0.0f));
 
+    return view;
+}
+
+glm::mat4 CameraSimpleOrtho::GetProjection() const
+{
+    const float unitsPerPixel = 1.0f / pixelsPerUnit;
+
     const glm::mat4 projection = glm::ortho(
         windowWidth * -0.5f * unitsPerPixel,
         windowWidth * 0.5f * unitsPerPixel,
@@ -34,7 +41,32 @@ glm::mat4 CameraSimpleOrtho::GetViewProjection() const
         0.0f,
         1.0f);
 
-    return projection * view;
+    return projection;
+}
+
+glm::mat4 CameraSimpleOrtho::GetViewProjection() const
+{
+    return GetProjection() * GetView();
+}
+
+glm::vec3 CameraSimpleOrtho::GetPosition() const
+{
+    return glm::vec3(position, -1.0f);
+}
+
+glm::vec3 CameraSimpleOrtho::GetForwardDirection() const
+{
+    return glm::vec3(0.0f, 0.0f, 1.0f);
+}
+
+glm::vec3 CameraSimpleOrtho::GetUpDirection() const
+{
+    return glm::vec3(0.0f, 1.0f, 0.0f);
+}
+
+bool CameraSimpleOrtho::IsOrthographic() const
+{
+    return true;
 }
 
 }

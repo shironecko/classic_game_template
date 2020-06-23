@@ -15,7 +15,14 @@ class CameraSimpleOrtho : public ICamera
 public:
     CameraSimpleOrtho(const Window& window);
 
+    glm::mat4 GetView() const override;
+    glm::mat4 GetProjection() const override;
     glm::mat4 GetViewProjection() const override;
+    glm::vec3 GetPosition() const override;
+    glm::vec3 GetForwardDirection() const override;
+    glm::vec3 GetUpDirection() const override;
+
+    bool IsOrthographic() const override;
 
     float pixelsPerUnit = 1.0f;
     bool snapToPixel = true;

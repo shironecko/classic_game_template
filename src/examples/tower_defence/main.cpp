@@ -12,7 +12,7 @@ int GameMain()
     auto imguiHelper = cgt::ImGuiHelper::Create(window, render);
 
     const float basePPU = 64.0f;
-    const float SCALE_FACTORS[] = { 4.0f, 3.0f, 2.0f, 1.0f, 1.0f / 2.0f, 1.0f / 3.0f, 1.0f / 4.0f };
+    const float SCALE_FACTORS[] = { 4.0f, 3.0f, 2.0f, 1.0f, 1.0f / 2.0f, 1.0f / 3.0f, 1.0f / 4.0f, 1.0f / 5.0f, 1.0f / 6.0f, 1.0f / 7.0f, 1.0f / 8.0f, 1.0f / 9.0f, 1.0f / 10.0f };
     i32 scaleFactorIdx = 3;
 
     cgt::render::CameraSimpleOrtho camera(*window);
@@ -39,7 +39,7 @@ int GameMain()
         ZoneScopedN("Main Loop");
 
         const float dt = clock.Tick();
-        imguiHelper->NewFrame(dt);
+        imguiHelper->NewFrame(dt, camera);
 
         {
             ImGui::SetNextWindowSize({200, 80}, ImGuiCond_FirstUseEver);
@@ -136,11 +136,62 @@ int GameMain()
 
                 renderQueue.sprites.emplace_back(std::move(sprite));
             }
+        }
 
+        for (auto& layer: map.getLayers())
+        {
+            if (layer.getType() != tson::LayerType::ObjectGroup)
+            {
+                continue;
+            }
+
+            glm::vec3 readabilityShift(0.0f);
+            for (auto& object: layer.getObjectsByType(tson::ObjectType::Polyline))
+            {
+                auto color = object.get<tson::Colori>("PlayerColor").asFloat();
+                glm::vec3 basePosition(
+                    (float)object.getPosition().x / map.getTileSize().x - 0.5f,
+                    (float)object.getPosition().y / map.getTileSize().y * -1.0f + 0.5f,
+                    0.0f);
+
+                glm::mat4 baseRotation = glm::rotate(
+                    glm::mat4(1.0f),
+                    glm::radians(object.getRotation()),
+                    { 0.0f, 0.0f, 1.0f });
+
+                Im3d::PushColor({ color.r, color.g, color.b, color.a });
+                Im3d::PushMatrix(glm::translate(glm::mat4(1.0f), readabilityShift));
+                Im3d::PushSize(3.0f);
+                Im3d::BeginLineStrip();
+                bool namePrinted = false;
+                for (auto& point: object.getPolylines())
+                {
+                    glm::vec3 pointPosition(
+                        (float)point.x / map.getTileSize().x,
+                        (float)point.y / map.getTileSize().y * -1.0f,
+                        0.0f);
+
+                    glm::vec3 finalPosition = baseRotation * glm::vec4(pointPosition, 1.0f);
+                    finalPosition += basePosition;
+                    Im3d::Vertex(finalPosition);
+
+                    if (!namePrinted)
+                    {
+                        namePrinted = true;
+                        Im3d::Text(finalPosition, Im3d::TextFlags_AlignTop, object.getName().c_str());
+                    }
+                }
+                Im3d::End();
+                Im3d::PopSize();
+                Im3d::PopMatrix();
+                Im3d::PopColor();
+
+                readabilityShift += glm::vec3(0.1f, -0.1f, 0.0f);
+            }
         }
 
         renderStats = render->Submit(renderQueue, camera);
-        imguiHelper->RenderUi();
+        imguiHelper->RenderUi(camera);
         render->Present();
 
         TracyPlot("Sprites", (i64)renderStats.spriteCount);
