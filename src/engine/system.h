@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <random>
 #include <string>
 #include <vector>
 #include <unordered_map>
