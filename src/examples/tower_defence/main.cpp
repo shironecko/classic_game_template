@@ -1,5 +1,7 @@
 #include <examples/tower_defence/pch.h>
 
+#include <examples/tower_defence/tilemap.h>
+
 int GameMain()
 {
     auto window = cgt::WindowConfig::Default()
@@ -22,11 +24,15 @@ int GameMain()
     tson::Map map = mapParser.parse(cgt::AssetPath("examples/maps/tower_defense.json"));
     CGT_ASSERT_ALWAYS(map.getStatus() == tson::ParseStatus::OK);
 
-    tson::Tileset* tileset = map.getTileset("tower_defense");
-    CGT_ASSERT_ALWAYS(tileset);
+    tson::Tileset* rawTileset = map.getTileset("tower_defense");
+    CGT_ASSERT_ALWAYS(rawTileset);
 
     cgt::render::TextureHandle tilesetTexture = render->LoadTexture(
-        cgt::AssetPath("examples/maps") / tileset->getImagePath());
+        cgt::AssetPath("examples/maps") / rawTileset->getImagePath());
+
+    auto tileset = TileSet::Load(*rawTileset, tilesetTexture);
+    auto baseMapLayer = StaticTileGrid::Load(map, *map.getLayer("Base"), *rawTileset, 0);
+    auto propsMapLayer = StaticTileGrid::Load(map, *map.getLayer("Props"), *rawTileset, 1);
 
     cgt::Clock clock;
     cgt::render::RenderQueue renderQueue;
@@ -96,47 +102,8 @@ int GameMain()
         renderQueue.Reset();
         renderQueue.clearColor = { 0.5f, 0.5f, 0.5f, 1.0f };
 
-        int firstId = tileset->getFirstgid();
-        int columns = tileset->getColumns();
-        int rows = tileset->getTileCount() / columns;
-        int lastId = (tileset->getFirstgid() + tileset->getTileCount()) - 1;
-
-        for (auto& layer: map.getLayers())
-        {
-            ZoneScopedN("Layer Render");
-
-            if (layer.getType() != tson::LayerType::TileLayer)
-            {
-                continue;
-            }
-
-            for (auto& [pos, tile]: layer.getTileData())
-            {
-                //Get position in pixel units
-                tson::Vector2i position = {std::get<0>(pos) * map.getTileSize().x,std::get<1>(pos) * map.getTileSize().y};
-                
-                int baseTilePosition = (tile->getId() - firstId); //This will determine the base position of the tile.
-                
-                //The baseTilePosition can be used to calculate offset on its related tileset image.
-                int tileModX = (baseTilePosition % columns);
-                int currentRow = (baseTilePosition / columns);
-                int offsetX = (tileModX != 0) ? ((tileModX) * map.getTileSize().x) : (0 * map.getTileSize().x);
-                int offsetY =  (currentRow < rows-1) ? (currentRow * map.getTileSize().y) : 
-                               ((rows-1) * map.getTileSize().y);
-
-                glm::vec2 uvMin = { (float)offsetX / tileset->getImageSize().x, (float)offsetY / tileset->getImageSize().y };
-                glm::vec2 uvTileDimensions = { (float)map.getTileSize().x / tileset->getImageSize().x, (float)map.getTileSize().y / tileset->getImageSize().y };
-                glm::vec2 uvMax = uvMin + uvTileDimensions;
-
-                cgt::render::SpriteDrawRequest sprite;
-                sprite.position = { std::get<0>(pos), std::get<1>(pos) * -1.0f };
-                sprite.texture = tilesetTexture;
-                sprite.uvMin = uvMin;
-                sprite.uvMax = uvMax;
-
-                renderQueue.sprites.emplace_back(std::move(sprite));
-            }
-        }
+        baseMapLayer->Render(renderQueue, *tileset);
+        propsMapLayer->Render(renderQueue, *tileset);
 
         for (auto& layer: map.getLayers())
         {

@@ -1,5 +1,6 @@
 add_executable(tower_defence
     main.cpp
+    tilemap.cpp tilemap.h
     pch.h)
 
 target_link_libraries(tower_defence
