@@ -2,6 +2,34 @@
 
 #include <examples/tower_defence/tilemap.h>
 
+struct EnemyPath
+{
+    std::string debugName;
+    glm::vec4 debugColor;
+    std::vector<glm::vec2> waypoints;
+
+    void DebugRender()
+    {
+        Im3d::PushAlpha(0.5f);
+        Im3d::PushColor({ debugColor.r, debugColor.g, debugColor.b, debugColor.a });
+
+        Im3d::Text(glm::vec3(waypoints[0], 0.0f), Im3d::TextFlags_AlignTop, debugName.c_str());
+
+        Im3d::PushSize(3.0f);
+
+        Im3d::BeginLineStrip();
+        for (auto point : waypoints)
+        {
+            Im3d::Vertex(glm::vec3(point, 0.0f));
+        }
+        Im3d::End();
+
+        Im3d::PopSize();
+        Im3d::PopColor();
+        Im3d::PopAlpha();
+    }
+};
+
 int GameMain()
 {
     auto window = cgt::WindowConfig::Default()
@@ -33,6 +61,41 @@ int GameMain()
     auto tileset = TileSet::Load(*rawTileset, tilesetTexture);
     auto baseMapLayer = StaticTileGrid::Load(map, *map.getLayer("Base"), *rawTileset, 0);
     auto propsMapLayer = StaticTileGrid::Load(map, *map.getLayer("Props"), *rawTileset, 1);
+
+    std::vector<EnemyPath> enemyPaths;
+    auto* pathLayer = map.getLayer("Paths");
+    CGT_ASSERT_ALWAYS(pathLayer && pathLayer->getType() == tson::LayerType::ObjectGroup);
+
+    for (auto& object : pathLayer->getObjectsByType(tson::ObjectType::Polyline))
+    {
+        auto& path = enemyPaths.emplace_back();
+        path.debugName = object.getName();
+        auto color = object.get<tson::Colori>("PlayerColor").asFloat();
+        path.debugColor = { color.r, color.g, color.b, color.a };
+
+        glm::vec3 basePosition(
+            (float)object.getPosition().x / map.getTileSize().x - 0.5f,
+            (float)object.getPosition().y / map.getTileSize().y * -1.0f + 0.5f,
+            0.0f);
+
+        glm::mat4 baseRotation = glm::rotate(
+            glm::mat4(1.0f),
+            glm::radians(object.getRotation()),
+            { 0.0f, 0.0f, 1.0f });
+
+        for (auto& point: object.getPolylines())
+        {
+            glm::vec3 pointPosition(
+                (float)point.x / map.getTileSize().x,
+                (float)point.y / map.getTileSize().y * -1.0f,
+                0.0f);
+
+            glm::vec3 finalPosition = baseRotation * glm::vec4(pointPosition, 1.0f);
+            finalPosition += basePosition;
+
+            path.waypoints.emplace_back(finalPosition);
+        }
+    }
 
     cgt::Clock clock;
     cgt::render::RenderQueue renderQueue;
@@ -105,56 +168,9 @@ int GameMain()
         baseMapLayer->Render(renderQueue, *tileset);
         propsMapLayer->Render(renderQueue, *tileset);
 
-        for (auto& layer: map.getLayers())
+        for (auto& path : enemyPaths)
         {
-            if (layer.getType() != tson::LayerType::ObjectGroup)
-            {
-                continue;
-            }
-
-            glm::vec3 readabilityShift(0.0f);
-            for (auto& object: layer.getObjectsByType(tson::ObjectType::Polyline))
-            {
-                auto color = object.get<tson::Colori>("PlayerColor").asFloat();
-                glm::vec3 basePosition(
-                    (float)object.getPosition().x / map.getTileSize().x - 0.5f,
-                    (float)object.getPosition().y / map.getTileSize().y * -1.0f + 0.5f,
-                    0.0f);
-
-                glm::mat4 baseRotation = glm::rotate(
-                    glm::mat4(1.0f),
-                    glm::radians(object.getRotation()),
-                    { 0.0f, 0.0f, 1.0f });
-
-                Im3d::PushColor({ color.r, color.g, color.b, color.a });
-                Im3d::PushMatrix(glm::translate(glm::mat4(1.0f), readabilityShift));
-                Im3d::PushSize(3.0f);
-                Im3d::BeginLineStrip();
-                bool namePrinted = false;
-                for (auto& point: object.getPolylines())
-                {
-                    glm::vec3 pointPosition(
-                        (float)point.x / map.getTileSize().x,
-                        (float)point.y / map.getTileSize().y * -1.0f,
-                        0.0f);
-
-                    glm::vec3 finalPosition = baseRotation * glm::vec4(pointPosition, 1.0f);
-                    finalPosition += basePosition;
-                    Im3d::Vertex(finalPosition);
-
-                    if (!namePrinted)
-                    {
-                        namePrinted = true;
-                        Im3d::Text(finalPosition, Im3d::TextFlags_AlignTop, object.getName().c_str());
-                    }
-                }
-                Im3d::End();
-                Im3d::PopSize();
-                Im3d::PopMatrix();
-                Im3d::PopColor();
-
-                readabilityShift += glm::vec3(0.1f, -0.1f, 0.0f);
-            }
+            path.DebugRender();
         }
 
         renderStats = render->Submit(renderQueue, camera);
