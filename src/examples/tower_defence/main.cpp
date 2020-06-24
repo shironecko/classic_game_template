@@ -193,6 +193,25 @@ int GameMain()
 
         camera.pixelsPerUnit = basePPU * SCALE_FACTORS[scaleFactorIdx];
 
+        const float DT_SCALE_FACTORS[] = { 0.25f, 0.5f, 1.0f, 2.0f, 4.0f };
+        const char* DT_SCALE_FACTORS_STR[] = { "0.25", "0.5", "1.0", "2.0", "4.0" };
+        static u32 selectedDtScaleIdx = 2;
+        {
+            ImGui::Begin("Gameplay Settings");
+
+            for (u32 i = 0; i < SDL_arraysize(DT_SCALE_FACTORS); ++i)
+            {
+                if (ImGui::RadioButton(DT_SCALE_FACTORS_STR[i], i == selectedDtScaleIdx))
+                {
+                    selectedDtScaleIdx = i;
+                }
+            }
+
+            ImGui::End();
+        }
+
+        const float scaledDt = dt * DT_SCALE_FACTORS[selectedDtScaleIdx];
+
         {
             static u32 selectedEnemyIdx = 0, selectedPathIdx = 0;
             ImGui::Begin("Spawn Enemies");
@@ -264,7 +283,7 @@ int GameMain()
                 glm::vec2 closestPoint(
                     glm::clamp(enemy.position.x, minX, maxX),
                     glm::clamp(enemy.position.y, minY, maxY));
-                float distanceLeft = 0.6f;
+                float distanceLeft = 2.0f;
                 u32 targetPointIdx = enemy.targetPointIdx;
                 glm::vec2 chasePoint = closestPoint;
 
@@ -284,7 +303,7 @@ int GameMain()
                 glm::vec2 target = targetPoint;//path.waypoints[enemy.targetPointIdx];
                 glm::vec2 toTarget = target - enemy.position;
                 float toTargetDist = glm::length(toTarget);
-                float stepLength = enemy.speed * dt;
+                float stepLength = enemy.speed * scaledDt;
                 if (stepLength >= toTargetDist)
                 {
                     ++enemy.targetPointIdx;
