@@ -30,6 +30,20 @@ struct EnemyPath
     }
 };
 
+struct Enemy
+{
+    glm::vec2 position;
+    TileSet::TileId tileId;
+
+    std::string name;
+    float health;
+    float speed;
+    float armor;
+    u32 unitsPerSpawn;
+
+    u32 targetPointIdx = 1;
+};
+
 int GameMain()
 {
     auto window = cgt::WindowConfig::Default()
@@ -97,6 +111,23 @@ int GameMain()
         }
     }
 
+    std::vector<Enemy> enemyTypes;
+    auto* enemyLayer = map.getLayer("EnemyTypes");
+    CGT_ASSERT_ALWAYS(enemyLayer && enemyLayer->getType() == tson::LayerType::ObjectGroup);
+    for (auto& enemyData : enemyLayer->getObjectsByType(tson::ObjectType::Object))
+    {
+        auto& enemyType = enemyTypes.emplace_back();
+        enemyType.position = glm::vec2(0.0f);
+        enemyType.name = enemyData.getName();
+        enemyType.tileId = enemyData.getGid() - rawTileset->getFirstgid();
+        enemyType.health = enemyData.get<float>("Health");
+        enemyType.armor = enemyData.get<float>("Armor");
+        enemyType.speed = enemyData.get<float>("Speed");
+        enemyType.unitsPerSpawn = enemyData.get<int>("UnitsPerSpawn");
+    }
+
+    std::vector<std::vector<Enemy>> enemies(enemyPaths.size());
+
     cgt::Clock clock;
     cgt::render::RenderQueue renderQueue;
     cgt::render::RenderStats renderStats {};
@@ -162,11 +193,129 @@ int GameMain()
 
         camera.pixelsPerUnit = basePPU * SCALE_FACTORS[scaleFactorIdx];
 
+        {
+            static u32 selectedEnemyIdx = 0, selectedPathIdx = 0;
+            ImGui::Begin("Spawn Enemies");
+
+            if (ImGui::BeginCombo("Enemy Type", enemyTypes[selectedEnemyIdx].name.c_str()))
+            {
+                for (u32 i = 0; i < enemyTypes.size(); ++i)
+                {
+                    bool selected = i == selectedEnemyIdx;
+                    if (ImGui::Selectable(enemyTypes[i].name.c_str(), selected))
+                    {
+                        selectedEnemyIdx = i;
+                    }
+
+                    if (selected)
+                    {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+
+            if (ImGui::BeginCombo("Path", enemyPaths[selectedPathIdx].debugName.c_str()))
+            {
+                for (u32 i = 0; i < enemyPaths.size(); ++i)
+                {
+                    bool selected = i == selectedPathIdx;
+                    if (ImGui::Selectable(enemyPaths[i].debugName.c_str(), selected))
+                    {
+                        selectedPathIdx = i;
+                    }
+
+                    if (selected)
+                    {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+
+            if (ImGui::Button("Spawn Enemy"))
+            {
+                Enemy newEnemy = enemyTypes[selectedEnemyIdx];
+                auto& path = enemyPaths[selectedPathIdx];
+                newEnemy.position = path.waypoints[0];
+                enemies[selectedPathIdx].emplace_back(newEnemy);
+            }
+
+            ImGui::End();
+        }
+
+        for (u32 pathIdx = 0; pathIdx < enemyPaths.size(); ++pathIdx)
+        {
+            auto& path = enemyPaths[pathIdx];
+            for (auto& enemy : enemies[pathIdx])
+            {
+                if (enemy.targetPointIdx >= path.waypoints.size())
+                {
+                    continue;
+                }
+
+                glm::vec2 a = path.waypoints[enemy.targetPointIdx - 1];
+                glm::vec2 b = path.waypoints[enemy.targetPointIdx];
+                float minX = glm::min(a.x, b.x);
+                float maxX = glm::max(a.x, b.x);
+                float minY = glm::min(a.y, b.y);
+                float maxY = glm::max(a.y, b.y);
+
+                glm::vec2 closestPoint(
+                    glm::clamp(enemy.position.x, minX, maxX),
+                    glm::clamp(enemy.position.y, minY, maxY));
+                float distanceLeft = 0.6f;
+                u32 targetPointIdx = enemy.targetPointIdx;
+                glm::vec2 chasePoint = closestPoint;
+
+                do
+                {
+                    glm::vec2 targetPoint = path.waypoints[targetPointIdx];
+                    glm::vec2 forward = targetPoint - chasePoint;
+                    float advanceDistance = glm::min(distanceLeft, glm::length(forward));
+                    chasePoint += glm::normalize(forward) * advanceDistance;
+                    distanceLeft -= advanceDistance;
+                    ++targetPointIdx;
+                } while (distanceLeft > 0.0001f && targetPointIdx < path.waypoints.size());
+
+                glm::vec2 forwardDirection = glm::normalize(b - a);
+                glm::vec2 targetPoint = chasePoint;//closestPoint + forwardDirection * 1.0f;
+
+                glm::vec2 target = targetPoint;//path.waypoints[enemy.targetPointIdx];
+                glm::vec2 toTarget = target - enemy.position;
+                float toTargetDist = glm::length(toTarget);
+                float stepLength = enemy.speed * dt;
+                if (stepLength >= toTargetDist)
+                {
+                    ++enemy.targetPointIdx;
+                    enemy.position = target;
+                }
+                else
+                {
+                    enemy.position += glm::normalize(toTarget) * stepLength;
+                }
+            }
+        }
+
         renderQueue.Reset();
         renderQueue.clearColor = { 0.5f, 0.5f, 0.5f, 1.0f };
 
         baseMapLayer->Render(renderQueue, *tileset);
         propsMapLayer->Render(renderQueue, *tileset);
+
+        for (u32 pathIdx = 0; pathIdx < enemyPaths.size(); ++pathIdx)
+        {
+            for (auto& enemy : enemies[pathIdx])
+            {
+                cgt::render::SpriteDrawRequest sprite;
+                sprite.position = enemy.position;
+                sprite.texture = tileset->GetTexture();
+                auto uv = (*tileset)[enemy.tileId];
+                sprite.uvMin = uv.min;
+                sprite.uvMax = uv.max;
+                renderQueue.sprites.emplace_back(std::move(sprite));
+            }
+        }
 
         for (auto& path : enemyPaths)
         {
