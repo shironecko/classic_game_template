@@ -127,6 +127,9 @@ int GameMain()
     }
 
     std::vector<std::vector<Enemy>> enemies(enemyPaths.size());
+    
+    std::default_random_engine randEngine;
+    std::uniform_real_distribution<float> distribution(0.0f, 2.0f);
 
     cgt::Clock clock;
     cgt::render::RenderQueue renderQueue;
@@ -193,9 +196,9 @@ int GameMain()
 
         camera.pixelsPerUnit = basePPU * SCALE_FACTORS[scaleFactorIdx];
 
-        const float DT_SCALE_FACTORS[] = { 0.25f, 0.5f, 1.0f, 2.0f, 4.0f };
-        const char* DT_SCALE_FACTORS_STR[] = { "0.25", "0.5", "1.0", "2.0", "4.0" };
-        static u32 selectedDtScaleIdx = 2;
+        const float DT_SCALE_FACTORS[] = { 0.0f, 0.25f, 0.5f, 1.0f, 2.0f, 4.0f };
+        const char* DT_SCALE_FACTORS_STR[] = { "0", "0.25", "0.5", "1.0", "2.0", "4.0" };
+        static u32 selectedDtScaleIdx = 3;
         {
             ImGui::Begin("Gameplay Settings");
 
@@ -257,6 +260,11 @@ int GameMain()
                 Enemy newEnemy = enemyTypes[selectedEnemyIdx];
                 auto& path = enemyPaths[selectedPathIdx];
                 newEnemy.position = path.waypoints[0];
+                glm::vec2 randomShift(
+                    distribution(randEngine),
+                    distribution(randEngine));
+                newEnemy.position += randomShift;
+
                 enemies[selectedPathIdx].emplace_back(newEnemy);
             }
 
@@ -304,14 +312,35 @@ int GameMain()
                 glm::vec2 toTarget = target - enemy.position;
                 float toTargetDist = glm::length(toTarget);
                 float stepLength = enemy.speed * scaledDt;
+
+                glm::vec2 velocity = glm::normalize(toTarget) * enemy.speed;
+
+                for (auto& enemyGroup : enemies)
+                {
+                    for (auto& otherEnemy : enemyGroup)
+                    {
+                        if (&enemy == &otherEnemy)
+                        {
+                            continue;
+                        }
+
+                        glm::vec2 fromEnemy = enemy.position - otherEnemy.position;
+                        float distanceSqr = glm::dot(fromEnemy, fromEnemy);
+                        if (distanceSqr < 0.5f * 0.5f)
+                        {
+                            velocity += fromEnemy;
+                        }
+                    }
+                }
+
+
                 if (stepLength >= toTargetDist)
                 {
                     ++enemy.targetPointIdx;
-                    enemy.position = target;
                 }
                 else
                 {
-                    enemy.position += glm::normalize(toTarget) * stepLength;
+                    enemy.position += velocity * scaledDt;
                 }
             }
         }
