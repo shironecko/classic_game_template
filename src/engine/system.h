@@ -48,7 +48,7 @@ while (!(condition))                                                            
 #if defined(DEBUG) || defined(_DEBUG)
 #define CGT_DEBUG_ONLY(stmt) (stmt)
 #define CGT_ASSERT(condition) CGT_ASSERT_ALWAYS((condition))
-#define CGT_ASSERT_MSG(condition, fmtStr, ...) CGT_ASSERT_ALWAYS((condition), fmtStr, ##__VA_ARGS__)
+#define CGT_ASSERT_MSG(condition, fmtStr, ...) CGT_ASSERT_ALWAYS_MSG((condition), fmtStr, ##__VA_ARGS__)
 #else
 #define CGT_DEBUG_ONLY(stmt)
 #define CGT_ASSERT(condition)
