@@ -285,6 +285,35 @@ int GameMain()
             ImGui::End();
         }
 
+        static float flockWaypointSteeringFactor = 1.0f;
+        static float flockCommonDirectionFactor = 0.2f;
+
+        static float flockSightRange = 3.0f;
+
+        static float flockMaxPathDistance = 0.8f;
+        static float flockPathReadjustFactor = 0.4f;
+
+        static float flockDesiredSpacing = 0.3f;
+        static float flockPushbackFactor = 0.7f;
+
+        static float flockCenteringFactor = 0.3f;
+        {
+            ImGui::Begin("Flocking Options");
+
+            ImGui::DragFloat("Sight Range", &flockSightRange, 0.1f, 0.0f, 5.0f);
+            ImGui::DragFloat("Max Path Distance", &flockMaxPathDistance, 0.1f, 0.0f, 5.0f);
+            ImGui::DragFloat("Desired Spacing", &flockDesiredSpacing, 0.1f, 0.0f, 5.0f);
+
+            ImGui::TextUnformatted("Factors");
+            ImGui::DragFloat("Waypoint", &flockWaypointSteeringFactor, 0.1f, 0.0f, 1.0f);
+            ImGui::DragFloat("Common Direction", &flockCommonDirectionFactor, 0.1f, 0.0f, 1.0f);
+            ImGui::DragFloat("Path Readjust", &flockPathReadjustFactor, 0.1f, 0.0f, 1.0f);
+            ImGui::DragFloat("Pushback", &flockPushbackFactor, 0.1f, 0.0f, 1.0f);
+            ImGui::DragFloat("Centering", &flockCenteringFactor, 0.1f, 0.0f, 1.0f);
+
+            ImGui::End();
+        }
+
         for (auto& enemy : enemies)
         {
             if (enemy.targetPointIdx >= enemyPath.waypoints.size())
@@ -294,63 +323,67 @@ int GameMain()
 
             auto& enemyType = enemyTypes[enemy.typeId];
 
-            glm::vec2 a = enemyPath.waypoints[enemy.targetPointIdx - 1];
-            glm::vec2 b = enemyPath.waypoints[enemy.targetPointIdx];
-            float minX = glm::min(a.x, b.x);
-            float maxX = glm::max(a.x, b.x);
-            float minY = glm::min(a.y, b.y);
-            float maxY = glm::max(a.y, b.y);
+            const glm::vec2 a = enemyPath.waypoints[enemy.targetPointIdx - 1];
+            const glm::vec2 b = enemyPath.waypoints[enemy.targetPointIdx];
 
-            glm::vec2 closestPoint(
-                glm::clamp(enemy.position.x, minX, maxX),
-                glm::clamp(enemy.position.y, minY, maxY));
-            float distanceLeft = 2.0f;
-            u32 targetPointIdx = enemy.targetPointIdx;
-            glm::vec2 chasePoint = closestPoint;
+            const glm::vec2 nextWaypointDirection = glm::normalize(b - enemy.position);
 
-            do
+            const glm::vec2 closestPathPoint = cgt::math::AABBClosestPoint(
+                enemy.position,
+                glm::min(a, b),
+                glm::max(a, b));
+
+            if (glm::distance(closestPathPoint, b) < 0.1f)
             {
-                glm::vec2 targetPoint = enemyPath.waypoints[targetPointIdx];
-                glm::vec2 forward = targetPoint - chasePoint;
-                float advanceDistance = glm::min(distanceLeft, glm::length(forward));
-                chasePoint += glm::normalize(forward) * advanceDistance;
-                distanceLeft -= advanceDistance;
-                ++targetPointIdx;
-            } while (distanceLeft > 0.0001f && targetPointIdx < enemyPath.waypoints.size());
+                ++enemy.targetPointIdx;
+            }
 
-            glm::vec2 forwardDirection = glm::normalize(b - a);
-            glm::vec2 targetPoint = chasePoint;//closestPoint + forwardDirection * 1.0f;
-
-            glm::vec2 target = targetPoint;//path.waypoints[enemy.targetPointIdx];
-            glm::vec2 toTarget = target - enemy.position;
-            float toTargetDist = glm::length(toTarget);
-            float stepLength = enemyType.speed * scaledDt;
-
-            glm::vec2 velocity = glm::normalize(toTarget) * enemyType.speed;
-
-            for (auto& otherEnemy : enemies)
+            u32 othersInSight = 0;
+            glm::vec2 othersCumulativePosition(0.0f);
+            glm::vec2 othersCumulativeDirection(0.0f);
+            glm::vec2 pushbackFromOthers(0.0f);
+            for (const auto& otherEnemy : enemies)
             {
                 if (&enemy == &otherEnemy)
                 {
                     continue;
                 }
 
-                glm::vec2 fromEnemy = enemy.position - otherEnemy.position;
-                float distanceSqr = glm::dot(fromEnemy, fromEnemy);
-                if (distanceSqr < 0.5f * 0.5f)
+                glm::vec2 fromOther = enemy.position - otherEnemy.position;
+                float fromOtherDistSqr = glm::dot(fromOther, fromOther);
+                if (fromOtherDistSqr > flockSightRange * flockSightRange)
                 {
-                    velocity += fromEnemy;
+                    continue;
+                }
+
+                ++othersInSight;
+
+                othersCumulativePosition += otherEnemy.position;
+                othersCumulativeDirection += otherEnemy.direction;
+
+                if (fromOtherDistSqr < flockDesiredSpacing * flockDesiredSpacing)
+                {
+                    float fromOtherDist = glm::sqrt(fromOtherDistSqr);
+                    glm::vec2 fromOtherNorm = fromOther / fromOtherDist;
+                    float pushbackForce = 1.0f - glm::smoothstep(0.0f, flockDesiredSpacing, fromOtherDist);
+                    pushbackFromOthers += fromOtherNorm * pushbackForce;
                 }
             }
 
-            if (stepLength >= toTargetDist)
+            glm::vec2 directionDelta = nextWaypointDirection * flockWaypointSteeringFactor;
+            if (othersInSight > 0)
             {
-                ++enemy.targetPointIdx;
+                glm::vec2 othersAveragePosition = othersCumulativePosition / (float)othersInSight;
+                glm::vec2 centeringDirection = glm::normalize(othersAveragePosition - enemy.position);
+                directionDelta += centeringDirection * flockCenteringFactor;
+
+                directionDelta += glm::normalize(othersCumulativeDirection) * flockCommonDirectionFactor;
+
+                directionDelta += pushbackFromOthers;
             }
-            else
-            {
-                enemy.position += velocity * scaledDt;
-            }
+
+            enemy.direction = glm::normalize(enemy.direction + directionDelta);
+            enemy.position += enemy.direction * enemyType.speed * scaledDt;
         }
 
         renderQueue.Reset();
@@ -364,6 +397,7 @@ int GameMain()
             auto& enemyType = enemyTypes[enemy.typeId];
 
             cgt::render::SpriteDrawRequest sprite;
+            sprite.rotation = cgt::math::VectorAngle(enemy.direction);
             sprite.position = enemy.position;
             sprite.texture = tileset->GetTexture();
             auto uv = (*tileset)[enemyType.tileId];
