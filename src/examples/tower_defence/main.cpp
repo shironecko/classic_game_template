@@ -76,16 +76,15 @@ int GameMain()
     auto baseMapLayer = StaticTileGrid::Load(map, *map.getLayer("Base"), *rawTileset, 0);
     auto propsMapLayer = StaticTileGrid::Load(map, *map.getLayer("Props"), *rawTileset, 1);
 
-    std::vector<EnemyPath> enemyPaths;
+    EnemyPath enemyPath;
     auto* pathLayer = map.getLayer("Paths");
     CGT_ASSERT_ALWAYS(pathLayer && pathLayer->getType() == tson::LayerType::ObjectGroup);
 
-    for (auto& object : pathLayer->getObjectsByType(tson::ObjectType::Polyline))
     {
-        auto& path = enemyPaths.emplace_back();
-        path.debugName = object.getName();
+        auto object = pathLayer->getObjectsByType(tson::ObjectType::Polyline)[0];
+        enemyPath.debugName = object.getName();
         auto color = object.get<tson::Colori>("Color").asFloat();
-        path.debugColor = { color.r, color.g, color.b, color.a };
+        enemyPath.debugColor = { color.r, color.g, color.b, color.a };
 
         glm::vec3 basePosition(
             (float)object.getPosition().x / map.getTileSize().x - 0.5f,
@@ -107,7 +106,7 @@ int GameMain()
             glm::vec3 finalPosition = baseRotation * glm::vec4(pointPosition, 1.0f);
             finalPosition += basePosition;
 
-            path.waypoints.emplace_back(finalPosition);
+            enemyPath.waypoints.emplace_back(finalPosition);
         }
     }
 
@@ -126,7 +125,7 @@ int GameMain()
         enemyType.unitsPerSpawn = enemyData.get<int>("UnitsPerSpawn");
     }
 
-    std::vector<std::vector<Enemy>> enemies(enemyPaths.size());
+    std::vector<Enemy> enemies;
     
     std::default_random_engine randEngine;
     std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
@@ -237,24 +236,6 @@ int GameMain()
                 ImGui::EndCombo();
             }
 
-            if (ImGui::BeginCombo("Path", enemyPaths[selectedPathIdx].debugName.c_str()))
-            {
-                for (u32 i = 0; i < enemyPaths.size(); ++i)
-                {
-                    bool selected = i == selectedPathIdx;
-                    if (ImGui::Selectable(enemyPaths[i].debugName.c_str(), selected))
-                    {
-                        selectedPathIdx = i;
-                    }
-
-                    if (selected)
-                    {
-                        ImGui::SetItemDefaultFocus();
-                    }
-                }
-                ImGui::EndCombo();
-            }
-
             static i32 enemiesToSpawn = 20;
 
             ImGui::InputInt("Enemies To Spawn", &enemiesToSpawn);
@@ -264,99 +245,87 @@ int GameMain()
                 for (i32 i = 0; i < enemiesToSpawn; ++i)
                 {
                     Enemy newEnemy = enemyTypes[selectedEnemyIdx];
-                    auto& path = enemyPaths[selectedPathIdx];
-                    newEnemy.position = path.waypoints[0];
+                    newEnemy.position = enemyPath.waypoints[0];
                     glm::vec2 randomShift(
                         distribution(randEngine),
                         distribution(randEngine));
                     newEnemy.position += randomShift;
 
-                    enemies[selectedPathIdx].emplace_back(newEnemy);
+                    enemies.emplace_back(newEnemy);
                 }
             }
 
             if (ImGui::Button("Despawn All"))
             {
-                for (auto& enemyGroup : enemies)
-                {
-                    enemyGroup.clear();
-                }
+                enemies.clear();
             }
 
             ImGui::End();
         }
 
-        for (u32 pathIdx = 0; pathIdx < enemyPaths.size(); ++pathIdx)
+        for (auto& enemy : enemies)
         {
-            auto& path = enemyPaths[pathIdx];
-            for (auto& enemy : enemies[pathIdx])
+            if (enemy.targetPointIdx >= enemyPath.waypoints.size())
             {
-                if (enemy.targetPointIdx >= path.waypoints.size())
+                continue;
+            }
+
+            glm::vec2 a = enemyPath.waypoints[enemy.targetPointIdx - 1];
+            glm::vec2 b = enemyPath.waypoints[enemy.targetPointIdx];
+            float minX = glm::min(a.x, b.x);
+            float maxX = glm::max(a.x, b.x);
+            float minY = glm::min(a.y, b.y);
+            float maxY = glm::max(a.y, b.y);
+
+            glm::vec2 closestPoint(
+                glm::clamp(enemy.position.x, minX, maxX),
+                glm::clamp(enemy.position.y, minY, maxY));
+            float distanceLeft = 2.0f;
+            u32 targetPointIdx = enemy.targetPointIdx;
+            glm::vec2 chasePoint = closestPoint;
+
+            do
+            {
+                glm::vec2 targetPoint = enemyPath.waypoints[targetPointIdx];
+                glm::vec2 forward = targetPoint - chasePoint;
+                float advanceDistance = glm::min(distanceLeft, glm::length(forward));
+                chasePoint += glm::normalize(forward) * advanceDistance;
+                distanceLeft -= advanceDistance;
+                ++targetPointIdx;
+            } while (distanceLeft > 0.0001f && targetPointIdx < enemyPath.waypoints.size());
+
+            glm::vec2 forwardDirection = glm::normalize(b - a);
+            glm::vec2 targetPoint = chasePoint;//closestPoint + forwardDirection * 1.0f;
+
+            glm::vec2 target = targetPoint;//path.waypoints[enemy.targetPointIdx];
+            glm::vec2 toTarget = target - enemy.position;
+            float toTargetDist = glm::length(toTarget);
+            float stepLength = enemy.speed * scaledDt;
+
+            glm::vec2 velocity = glm::normalize(toTarget) * enemy.speed;
+
+            for (auto& otherEnemy : enemies)
+            {
+                if (&enemy == &otherEnemy)
                 {
                     continue;
                 }
 
-                glm::vec2 a = path.waypoints[enemy.targetPointIdx - 1];
-                glm::vec2 b = path.waypoints[enemy.targetPointIdx];
-                float minX = glm::min(a.x, b.x);
-                float maxX = glm::max(a.x, b.x);
-                float minY = glm::min(a.y, b.y);
-                float maxY = glm::max(a.y, b.y);
-
-                glm::vec2 closestPoint(
-                    glm::clamp(enemy.position.x, minX, maxX),
-                    glm::clamp(enemy.position.y, minY, maxY));
-                float distanceLeft = 2.0f;
-                u32 targetPointIdx = enemy.targetPointIdx;
-                glm::vec2 chasePoint = closestPoint;
-
-                do
+                glm::vec2 fromEnemy = enemy.position - otherEnemy.position;
+                float distanceSqr = glm::dot(fromEnemy, fromEnemy);
+                if (distanceSqr < 0.5f * 0.5f)
                 {
-                    glm::vec2 targetPoint = path.waypoints[targetPointIdx];
-                    glm::vec2 forward = targetPoint - chasePoint;
-                    float advanceDistance = glm::min(distanceLeft, glm::length(forward));
-                    chasePoint += glm::normalize(forward) * advanceDistance;
-                    distanceLeft -= advanceDistance;
-                    ++targetPointIdx;
-                } while (distanceLeft > 0.0001f && targetPointIdx < path.waypoints.size());
-
-                glm::vec2 forwardDirection = glm::normalize(b - a);
-                glm::vec2 targetPoint = chasePoint;//closestPoint + forwardDirection * 1.0f;
-
-                glm::vec2 target = targetPoint;//path.waypoints[enemy.targetPointIdx];
-                glm::vec2 toTarget = target - enemy.position;
-                float toTargetDist = glm::length(toTarget);
-                float stepLength = enemy.speed * scaledDt;
-
-                glm::vec2 velocity = glm::normalize(toTarget) * enemy.speed;
-
-                for (auto& enemyGroup : enemies)
-                {
-                    for (auto& otherEnemy : enemyGroup)
-                    {
-                        if (&enemy == &otherEnemy)
-                        {
-                            continue;
-                        }
-
-                        glm::vec2 fromEnemy = enemy.position - otherEnemy.position;
-                        float distanceSqr = glm::dot(fromEnemy, fromEnemy);
-                        if (distanceSqr < 0.5f * 0.5f)
-                        {
-                            velocity += fromEnemy;
-                        }
-                    }
+                    velocity += fromEnemy;
                 }
+            }
 
-
-                if (stepLength >= toTargetDist)
-                {
-                    ++enemy.targetPointIdx;
-                }
-                else
-                {
-                    enemy.position += velocity * scaledDt;
-                }
+            if (stepLength >= toTargetDist)
+            {
+                ++enemy.targetPointIdx;
+            }
+            else
+            {
+                enemy.position += velocity * scaledDt;
             }
         }
 
@@ -366,24 +335,18 @@ int GameMain()
         baseMapLayer->Render(renderQueue, *tileset);
         propsMapLayer->Render(renderQueue, *tileset);
 
-        for (u32 pathIdx = 0; pathIdx < enemyPaths.size(); ++pathIdx)
+        for (auto& enemy : enemies)
         {
-            for (auto& enemy : enemies[pathIdx])
-            {
-                cgt::render::SpriteDrawRequest sprite;
-                sprite.position = enemy.position;
-                sprite.texture = tileset->GetTexture();
-                auto uv = (*tileset)[enemy.tileId];
-                sprite.uvMin = uv.min;
-                sprite.uvMax = uv.max;
-                renderQueue.sprites.emplace_back(std::move(sprite));
-            }
+            cgt::render::SpriteDrawRequest sprite;
+            sprite.position = enemy.position;
+            sprite.texture = tileset->GetTexture();
+            auto uv = (*tileset)[enemy.tileId];
+            sprite.uvMin = uv.min;
+            sprite.uvMax = uv.max;
+            renderQueue.sprites.emplace_back(std::move(sprite));
         }
 
-        for (auto& path : enemyPaths)
-        {
-            path.DebugRender();
-        }
+        enemyPath.DebugRender();
 
         renderStats = render->Submit(renderQueue, camera);
         imguiHelper->RenderUi(camera);
