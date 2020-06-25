@@ -30,18 +30,42 @@ struct EnemyPath
     }
 };
 
+typedef u32 EnemyTypeId;
+
 struct Enemy
 {
     glm::vec2 position;
+    glm::vec2 direction;
+
+    EnemyTypeId typeId;
+
+    float remainingHealth;
+
+    u32 targetPointIdx;
+};
+
+struct EnemyType
+{
+    float maxHealth;
+    float speed;
+    u32 unitsPerSpawn;
     TileSet::TileId tileId;
 
     std::string name;
-    float health;
-    float speed;
-    float armor;
-    u32 unitsPerSpawn;
 
-    u32 targetPointIdx = 1;
+    Enemy CreateEnemy(const EnemyPath& path, EnemyTypeId typeId)
+    {
+        Enemy enemy;
+        const auto a = path.waypoints[0];
+        const auto b = path.waypoints[1];
+        enemy.position = a;
+        enemy.direction = glm::normalize(b - a);
+        enemy.typeId = typeId;
+        enemy.remainingHealth = maxHealth;
+        enemy.targetPointIdx = 1;
+
+        return enemy;
+    }
 };
 
 int GameMain()
@@ -110,17 +134,15 @@ int GameMain()
         }
     }
 
-    std::vector<Enemy> enemyTypes;
+    std::vector<EnemyType> enemyTypes;
     auto* enemyLayer = map.getLayer("EnemyTypes");
     CGT_ASSERT_ALWAYS(enemyLayer && enemyLayer->getType() == tson::LayerType::ObjectGroup);
     for (auto& enemyData : enemyLayer->getObjectsByType(tson::ObjectType::Object))
     {
         auto& enemyType = enemyTypes.emplace_back();
-        enemyType.position = glm::vec2(0.0f);
         enemyType.name = enemyData.getName();
         enemyType.tileId = enemyData.getGid() - rawTileset->getFirstgid();
-        enemyType.health = enemyData.get<float>("Health");
-        enemyType.armor = enemyData.get<float>("Armor");
+        enemyType.maxHealth = enemyData.get<float>("Health");
         enemyType.speed = enemyData.get<float>("Speed");
         enemyType.unitsPerSpawn = enemyData.get<int>("UnitsPerSpawn");
     }
@@ -147,8 +169,8 @@ int GameMain()
             ImGui::SetNextWindowSize({200, 80}, ImGuiCond_FirstUseEver);
             ImGui::Begin("Render Stats");
             ImGui::Text("Frame time: %.2fms", dt * 1000.0f);
-            ImGui::Text("Sprites: %d", renderStats.spriteCount);
-            ImGui::Text("Drawcalls: %d", renderStats.drawcallCount);
+            ImGui::Text("Sprites: %u", renderStats.spriteCount);
+            ImGui::Text("Drawcalls: %u", renderStats.drawcallCount);
             ImGui::End();
         }
 
@@ -244,14 +266,14 @@ int GameMain()
             {
                 for (i32 i = 0; i < enemiesToSpawn; ++i)
                 {
-                    Enemy newEnemy = enemyTypes[selectedEnemyIdx];
-                    newEnemy.position = enemyPath.waypoints[0];
+                    EnemyType& enemyType = enemyTypes[selectedEnemyIdx];
+                    auto enemy = enemyType.CreateEnemy(enemyPath, selectedEnemyIdx);
                     glm::vec2 randomShift(
                         distribution(randEngine),
                         distribution(randEngine));
-                    newEnemy.position += randomShift;
+                    enemy.position += randomShift;
 
-                    enemies.emplace_back(newEnemy);
+                    enemies.emplace_back(enemy);
                 }
             }
 
@@ -269,6 +291,8 @@ int GameMain()
             {
                 continue;
             }
+
+            auto& enemyType = enemyTypes[enemy.typeId];
 
             glm::vec2 a = enemyPath.waypoints[enemy.targetPointIdx - 1];
             glm::vec2 b = enemyPath.waypoints[enemy.targetPointIdx];
@@ -300,9 +324,9 @@ int GameMain()
             glm::vec2 target = targetPoint;//path.waypoints[enemy.targetPointIdx];
             glm::vec2 toTarget = target - enemy.position;
             float toTargetDist = glm::length(toTarget);
-            float stepLength = enemy.speed * scaledDt;
+            float stepLength = enemyType.speed * scaledDt;
 
-            glm::vec2 velocity = glm::normalize(toTarget) * enemy.speed;
+            glm::vec2 velocity = glm::normalize(toTarget) * enemyType.speed;
 
             for (auto& otherEnemy : enemies)
             {
@@ -337,10 +361,12 @@ int GameMain()
 
         for (auto& enemy : enemies)
         {
+            auto& enemyType = enemyTypes[enemy.typeId];
+
             cgt::render::SpriteDrawRequest sprite;
             sprite.position = enemy.position;
             sprite.texture = tileset->GetTexture();
-            auto uv = (*tileset)[enemy.tileId];
+            auto uv = (*tileset)[enemyType.tileId];
             sprite.uvMin = uv.min;
             sprite.uvMax = uv.max;
             renderQueue.sprites.emplace_back(std::move(sprite));

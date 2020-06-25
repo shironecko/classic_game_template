@@ -10,8 +10,8 @@ namespace cgt::render
 
 struct RenderStats
 {
-    usize spriteCount;
-    usize drawcallCount;
+    u32 spriteCount;
+    u32 drawcallCount;
 };
 
 class IRenderContext
