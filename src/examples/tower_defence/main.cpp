@@ -129,7 +129,7 @@ int GameMain()
     std::vector<std::vector<Enemy>> enemies(enemyPaths.size());
     
     std::default_random_engine randEngine;
-    std::uniform_real_distribution<float> distribution(0.0f, 2.0f);
+    std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
 
     cgt::Clock clock;
     cgt::render::RenderQueue renderQueue;
@@ -255,17 +255,24 @@ int GameMain()
                 ImGui::EndCombo();
             }
 
+            static i32 enemiesToSpawn = 20;
+
+            ImGui::InputInt("Enemies To Spawn", &enemiesToSpawn);
+
             if (ImGui::Button("Spawn Enemy"))
             {
-                Enemy newEnemy = enemyTypes[selectedEnemyIdx];
-                auto& path = enemyPaths[selectedPathIdx];
-                newEnemy.position = path.waypoints[0];
-                glm::vec2 randomShift(
-                    distribution(randEngine),
-                    distribution(randEngine));
-                newEnemy.position += randomShift;
+                for (i32 i = 0; i < enemiesToSpawn; ++i)
+                {
+                    Enemy newEnemy = enemyTypes[selectedEnemyIdx];
+                    auto& path = enemyPaths[selectedPathIdx];
+                    newEnemy.position = path.waypoints[0];
+                    glm::vec2 randomShift(
+                        distribution(randEngine),
+                        distribution(randEngine));
+                    newEnemy.position += randomShift;
 
-                enemies[selectedPathIdx].emplace_back(newEnemy);
+                    enemies[selectedPathIdx].emplace_back(newEnemy);
+                }
             }
 
             ImGui::End();
