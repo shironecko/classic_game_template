@@ -6,6 +6,7 @@ add_library(engine
     tilemap.h tilemap.cpp
     clock.cpp clock.h
     imgui_helper.cpp imgui_helper.h
+    math.cpp math.h
     api.h
     extern/tracy/TracyClient.cpp
     extern/im3d/im3d.cpp)
