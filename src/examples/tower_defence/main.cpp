@@ -275,6 +275,14 @@ int GameMain()
                 }
             }
 
+            if (ImGui::Button("Despawn All"))
+            {
+                for (auto& enemyGroup : enemies)
+                {
+                    enemyGroup.clear();
+                }
+            }
+
             ImGui::End();
         }
 
