@@ -84,7 +84,7 @@ int GameMain()
     {
         auto& path = enemyPaths.emplace_back();
         path.debugName = object.getName();
-        auto color = object.get<tson::Colori>("PlayerColor").asFloat();
+        auto color = object.get<tson::Colori>("Color").asFloat();
         path.debugColor = { color.r, color.g, color.b, color.a };
 
         glm::vec3 basePosition(
