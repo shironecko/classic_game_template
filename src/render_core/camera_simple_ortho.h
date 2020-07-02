@@ -22,6 +22,8 @@ public:
     glm::vec3 GetForwardDirection() const override;
     glm::vec3 GetUpDirection() const override;
 
+    glm::vec2 ScreenToWorld(u32 screenX, u32 screenY) const override;
+
     bool IsOrthographic() const override;
 
     float pixelsPerUnit = 1.0f;

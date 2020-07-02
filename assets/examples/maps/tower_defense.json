@@ -504,6 +504,15 @@
                 {
                  "id":117,
                  "terrain":[0, -1, -1, -1]
+                }, 
+                {
+                 "id":129,
+                 "properties":[
+                        {
+                         "name":"BuildingAllowed",
+                         "type":"bool",
+                         "value":true
+                        }]
                 }],
          "tilewidth":64
         }],

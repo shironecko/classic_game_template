@@ -17,4 +17,9 @@
  <tile id="115" terrain=",0,,"/>
  <tile id="116" terrain="0,0,,"/>
  <tile id="117" terrain="0,,,"/>
+ <tile id="129">
+  <properties>
+   <property name="BuildingAllowed" type="bool" value="true"/>
+  </properties>
+ </tile>
 </tileset>

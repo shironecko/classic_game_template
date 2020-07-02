@@ -30,6 +30,55 @@ struct EnemyPath
     }
 };
 
+class BuildableMap
+{
+public:
+    BuildableMap(const tson::Map& map, const tson::Layer& layer)
+        : m_Width(map.getSize().x)
+        , m_Height(map.getSize().y)
+        , m_Grid(m_Width * m_Height, 0)
+    {
+        for (auto &[pos, tile] : layer.getTileData())
+        {
+            bool buildable = tile->get<bool>("BuildingAllowed");
+
+            At(std::get<0>(pos), std::get<1>(pos)) = buildable ? 1 : 0;
+        }
+    }
+
+    u8& At(u32 x, u32 y)
+    {
+        CGT_ASSERT(x < m_Width && y < m_Height);
+        return m_Grid[y * m_Width + x];
+    }
+
+    bool Query(glm::vec2 position)
+    {
+        auto tile = WorldToTile(position);
+        tile.y *= -1;
+        if (tile.x < 0 || tile.x >= m_Width || tile.y < 0 || tile.y >= m_Height)
+        {
+            return false;
+        }
+
+        return At((u32)tile.x, (u32)tile.y) == 1;
+    }
+
+    glm::ivec2 WorldToTile(glm::vec2 world)
+    {
+        const glm::ivec2 tile(
+            (i32)glm::trunc(world.x + 0.5f * glm::sign(world.x)),
+            (i32)glm::trunc(world.y + 0.5f * glm::sign(world.y)));
+
+        return tile;
+    }
+
+private:
+    u32 m_Width;
+    u32 m_Height;
+    std::vector<u8> m_Grid;
+};
+
 typedef u32 EnemyTypeId;
 
 struct Enemy
@@ -136,6 +185,8 @@ int GameMain()
     auto tileset = TileSet::Load(*rawTileset, tilesetTexture);
     auto baseMapLayer = StaticTileGrid::Load(map, *map.getLayer("Base"), *rawTileset, 0);
     auto propsMapLayer = StaticTileGrid::Load(map, *map.getLayer("Props"), *rawTileset, 1);
+
+    BuildableMap buildableMap(map, *map.getLayer("Base"));
 
     EnemyPath enemyPath;
     auto* pathLayer = map.getLayer("Paths");
@@ -273,6 +324,35 @@ int GameMain()
         }
 
         camera.pixelsPerUnit = basePPU * SCALE_FACTORS[scaleFactorIdx];
+
+
+        int mouseX, mouseY;
+        SDL_GetMouseState(&mouseX, &mouseY);
+        glm::vec2 world = camera.ScreenToWorld((u32)mouseX, (u32)mouseY);
+        auto tilePos = buildableMap.WorldToTile(world);
+        bool buildable = buildableMap.Query(world);
+
+        {
+            ImGui::Begin("Mouse To World");
+
+            ImGui::Text("Screen position: (%d, %d)", mouseX, mouseY);
+            ImGui::Text("World position: (%.2f, %.2f)", world.x, world.y);
+            ImGui::Text("Tile Pos: (%d, %d)", tilePos.x, tilePos.y);
+            ImGui::Text("Buildable: %d", (int)buildable);
+
+            ImGui::End();
+        }
+
+        auto selectionColor = buildable
+            ? glm::vec4(0.0f, 1.0f, 0.0f, 1.0f)
+            : glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+        {
+            Im3d::PushAlpha(0.2f);
+            Im3d::PushColor(Im3d::Color(selectionColor));
+            Im3d::DrawAlignedBoxFilled({ tilePos.x - 0.5f, tilePos.y - 0.5f, 0.0f }, { tilePos.x + 0.5f, tilePos.y + 0.5f, 0.0f });
+            Im3d::PopColor();
+            Im3d::PopAlpha();
+        }
 
         const float DT_SCALE_FACTORS[] = { 0.0f, 0.25f, 0.5f, 1.0f, 2.0f, 4.0f };
         const char* DT_SCALE_FACTORS_STR[] = { "0", "0.25", "0.5", "1.0", "2.0", "4.0" };

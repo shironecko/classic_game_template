@@ -69,4 +69,18 @@ bool CameraSimpleOrtho::IsOrthographic() const
     return true;
 }
 
+glm::vec2 CameraSimpleOrtho::ScreenToWorld(u32 screenX, u32 screenY) const
+{
+    const glm::mat4 vp = GetViewProjection();
+    const glm::mat4 vpInverse = glm::inverse(vp);
+
+    const glm::vec2 ndc(
+        screenX / windowWidth * 2.0f - 1.0f,
+        (windowHeight - screenY) / windowHeight * 2.0f - 1.0f);
+
+    const glm::vec2 world =  vpInverse * glm::vec4(ndc, 0.0f, 1.0f);
+
+    return world;
+}
+
 }
