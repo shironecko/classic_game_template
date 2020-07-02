@@ -21,6 +21,7 @@ public:
     static std::shared_ptr<IRenderContext> BuildWithConfig(RenderConfig config);
 
     virtual TextureHandle LoadTexture(const std::filesystem::path& absolutePath) = 0;
+    virtual ImTextureID GetImTextureID(const TextureHandle& texture) = 0;
 
     virtual RenderStats Submit(RenderQueue& queue, const ICamera& camera) = 0;
     virtual void Present() = 0;

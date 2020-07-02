@@ -48,6 +48,7 @@ struct EnemyType
 {
     float maxHealth;
     float speed;
+    float goldReward;
     u32 unitsPerSpawn;
     TileSet::TileId tileId;
 
@@ -68,10 +69,46 @@ struct EnemyType
     }
 };
 
+typedef u32 TowerTypeId;
+
+struct Tower
+{
+    TowerTypeId type;
+    glm::vec2 position;
+    float timeSinceLastShot;
+};
+
+struct TowerType
+{
+    float cost;
+    float range;
+    float damage;
+    float shotsPerSecond;
+    float projectileSpeed;
+    float splashRadius;
+
+    TileSet::TileId tileId;
+    TileSet::TileId projectileTileId;
+    TileSet::TileId hitTileId;
+
+    std::string name;
+
+    Tower CreateTower(glm::vec2 position, TowerTypeId type)
+    {
+        Tower newTower;
+        newTower.position = position;
+        newTower.timeSinceLastShot = 0.0f;
+        newTower.type = type;
+
+        return newTower;
+    }
+};
+
 int GameMain()
 {
     auto window = cgt::WindowConfig::Default()
         .WithTitle("Tower Defence")
+        .WithDimensions(1920, 1080)
         .Build();
 
     auto render = cgt::render::RenderConfig::Default(window)
@@ -144,7 +181,27 @@ int GameMain()
         enemyType.tileId = enemyData.getGid() - rawTileset->getFirstgid();
         enemyType.maxHealth = enemyData.get<float>("Health");
         enemyType.speed = enemyData.get<float>("Speed");
+        enemyType.goldReward = enemyData.get<float>("GoldReward");
         enemyType.unitsPerSpawn = enemyData.get<int>("UnitsPerSpawn");
+    }
+
+    std::vector<TowerType> towerTypes;
+    auto* towerLayer = map.getLayer("TowerTypes");
+    CGT_ASSERT_ALWAYS(towerLayer && towerLayer->getType() == tson::LayerType::ObjectGroup);
+    for (auto& towerData : towerLayer->getObjectsByType(tson::ObjectType::Object))
+    {
+        auto& towerType = towerTypes.emplace_back();
+        towerType.name = towerData.getName();
+        towerType.cost = towerData.get<float>("Cost");
+        towerType.range = towerData.get<float>("Range");
+        towerType.damage = towerData.get<float>("Damage");
+        towerType.shotsPerSecond = towerData.get<float>("ShotsPerSecond");
+        towerType.splashRadius = towerData.get<float>("SplashRadius");
+        towerType.projectileSpeed = towerData.get<float>("ProjectileSpeed");
+
+        towerType.tileId = towerData.getGid() - rawTileset->getFirstgid();
+        towerType.projectileTileId = towerData.get<int>("ProjectileTile") - rawTileset->getFirstgid();
+        towerType.hitTileId = towerData.get<int>("HitTile") - rawTileset->getFirstgid();
     }
 
     std::vector<Enemy> enemies;
@@ -285,6 +342,55 @@ int GameMain()
             ImGui::End();
         }
 
+        {
+            ImGui::Begin("Towers");
+            for (auto& towerType : towerTypes)
+            {
+                auto textureId = render->GetImTextureID(tileset->GetTexture());
+                auto uv = (*tileset)[towerType.tileId];
+
+                if (ImGui::ImageButton(textureId, { 64.0f, 64.0f }, { uv.min.x, uv.min.y }, { uv.max.x, uv.max.y }))
+                {
+
+                }
+
+                if (ImGui::IsItemHovered())
+                {
+                    ImGui::BeginTooltip();
+
+                    ImGui::Text(towerType.name.c_str());
+                    ImGui::Separator();
+
+                    ImGui::TextColored({ 0.9f, 0.8f, 0.2f, 1.0f }, "%.0f$", towerType.cost);
+
+                    ImGui::Text("Range: ");
+                    ImGui::SameLine();
+                    ImGui::TextColored({ 0.2f, 0.8f, 0.2f, 1.0f }, "%.0f tiles", towerType.range);
+
+                    ImGui::Text("Damage: ");
+                    ImGui::SameLine();
+                    ImGui::TextColored({ 0.8f, 0.2f, 0.2f, 1.0f }, "%.0f", towerType.damage);
+
+                    if (towerType.splashRadius > 0.0f)
+                    {
+                        ImGui::Text("Splash: ");
+                        ImGui::SameLine();
+                        ImGui::TextColored({ 0.8f, 0.2f, 0.2f, 1.0f }, "%.1f", towerType.splashRadius);
+                    }
+
+                    ImGui::Text("Shots per second: ");
+                    ImGui::SameLine();
+                    ImGui::TextColored({ 0.2f, 0.8f, 0.2f, 1.0f }, "%.1f", towerType.shotsPerSecond);
+
+                    ImGui::EndTooltip();
+                }
+
+                ImGui::SameLine();
+            }
+            ImGui::End();
+        }
+
+        static float flockSteeringSpeed = 12.0f;
         static float flockWaypointSteeringFactor = 1.0f;
         static float flockCommonDirectionFactor = 0.2f;
 
@@ -293,22 +399,27 @@ int GameMain()
         static float flockMaxPathDistance = 0.8f;
         static float flockPathReadjustFactor = 0.4f;
 
-        static float flockDesiredSpacing = 0.3f;
-        static float flockPushbackFactor = 0.7f;
+        static float flockDesiredSpacing = 0.7f;
+        static float flockMinimumSpacing = 0.4;
+        static float flockPushbackFactor = 1.0f;
 
         static float flockCenteringFactor = 0.3f;
         {
             ImGui::Begin("Flocking Options");
 
+            ImGui::DragFloat("Steering Speed", &flockSteeringSpeed, 0.1f, 0.0f, 40.0f);
+            ImGui::Spacing();
+
             ImGui::DragFloat("Sight Range", &flockSightRange, 0.1f, 0.0f, 5.0f);
             ImGui::DragFloat("Max Path Distance", &flockMaxPathDistance, 0.1f, 0.0f, 5.0f);
             ImGui::DragFloat("Desired Spacing", &flockDesiredSpacing, 0.1f, 0.0f, 5.0f);
+            ImGui::DragFloat("Minimum Spacing", &flockMinimumSpacing, 0.1f, 0.0f, 5.0f);
 
             ImGui::TextUnformatted("Factors");
             ImGui::DragFloat("Waypoint", &flockWaypointSteeringFactor, 0.1f, 0.0f, 1.0f);
             ImGui::DragFloat("Common Direction", &flockCommonDirectionFactor, 0.1f, 0.0f, 1.0f);
             ImGui::DragFloat("Path Readjust", &flockPathReadjustFactor, 0.1f, 0.0f, 1.0f);
-            ImGui::DragFloat("Pushback", &flockPushbackFactor, 0.1f, 0.0f, 1.0f);
+            ImGui::DragFloat("Pushback", &flockPushbackFactor, 0.1f, 0.0f, 2.0f);
             ImGui::DragFloat("Centering", &flockCenteringFactor, 0.1f, 0.0f, 1.0f);
 
             ImGui::End();
@@ -332,6 +443,14 @@ int GameMain()
                 enemy.position,
                 glm::min(a, b),
                 glm::max(a, b));
+
+            glm::vec2 pathReadjust(0.0f);
+            glm::vec2 toClosestPathPoint = closestPathPoint - enemy.position;
+            float toClosestPathPointDistSqr = glm::dot(toClosestPathPoint, toClosestPathPoint);
+            if (toClosestPathPointDistSqr > 0.0f)
+            {
+                pathReadjust = glm::normalize(closestPathPoint - enemy.position);
+            }
 
             if (glm::distance(closestPathPoint, b) < 0.1f)
             {
@@ -365,7 +484,7 @@ int GameMain()
                 {
                     float fromOtherDist = glm::sqrt(fromOtherDistSqr);
                     glm::vec2 fromOtherNorm = fromOther / fromOtherDist;
-                    float pushbackForce = 1.0f - glm::smoothstep(0.0f, flockDesiredSpacing, fromOtherDist);
+                    float pushbackForce = 1.0f - glm::smoothstep(flockMinimumSpacing, flockDesiredSpacing, fromOtherDist);
                     pushbackFromOthers += fromOtherNorm * pushbackForce;
                 }
             }
@@ -379,11 +498,14 @@ int GameMain()
 
                 directionDelta += glm::normalize(othersCumulativeDirection) * flockCommonDirectionFactor;
 
-                directionDelta += pushbackFromOthers;
+                //directionDelta += pushbackFromOthers;
             }
 
-            enemy.direction = glm::normalize(enemy.direction + directionDelta);
+            directionDelta += pathReadjust * flockPathReadjustFactor;
+
+            enemy.direction = glm::normalize(enemy.direction + directionDelta * flockSteeringSpeed * scaledDt);
             enemy.position += enemy.direction * enemyType.speed * scaledDt;
+            enemy.position += pushbackFromOthers * enemyType.speed * flockPushbackFactor * scaledDt;
         }
 
         renderQueue.Reset();

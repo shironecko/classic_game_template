@@ -8,7 +8,6 @@ class TextureData;
 
 typedef std::shared_ptr<TextureData> TextureHandle;
 
-
 struct SpriteDrawRequest
 {
     glm::vec4 colorTint = glm::vec4(1.0f);

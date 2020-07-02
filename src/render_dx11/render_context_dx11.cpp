@@ -401,4 +401,9 @@ HRESULT RenderContextDX11::LoadTextureFromMemory(const u8* data, usize size, Tex
     return hresult;
 }
 
+ImTextureID RenderContextDX11::GetImTextureID(const TextureHandle& texture)
+{
+    return texture->m_View.Get();
+}
+
 }

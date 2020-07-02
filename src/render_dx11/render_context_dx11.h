@@ -27,6 +27,7 @@ public:
     static std::shared_ptr<RenderContextDX11> BuildWithConfig(RenderConfig config);
 
     TextureHandle LoadTexture(const std::filesystem::path& absolutePath) override;
+    ImTextureID GetImTextureID(const TextureHandle& texture) override;
 
     RenderStats Submit(RenderQueue& queue, const ICamera& camera) override;
     void Present() override;
