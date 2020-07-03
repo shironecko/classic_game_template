@@ -1,9 +1,10 @@
 #include <examples/tower_defence/pch.h>
 
 #include <examples/tower_defence/tilemap.h>
-#include <examples/tower_defence/map_data.h>
 #include <examples/tower_defence/enemy_data.h>
 #include <examples/tower_defence/tower_data.h>
+#include <examples/tower_defence/map_data.h>
+#include <examples/tower_defence/game_state.h>
 
 int GameMain()
 {
@@ -38,81 +39,22 @@ int GameMain()
     auto baseMapLayer = StaticTileGrid::Load(map, *map.getLayer("Base"), *rawTileset, 0);
     auto propsMapLayer = StaticTileGrid::Load(map, *map.getLayer("Props"), *rawTileset, 1);
 
-    BuildableMap buildableMap(map, *map.getLayer("Base"));
+    MapData mapData;
+    MapData::Load(map, mapData);
 
-    EnemyPath enemyPath;
-    auto* pathLayer = map.getLayer("Paths");
-    CGT_ASSERT_ALWAYS(pathLayer && pathLayer->getType() == tson::LayerType::ObjectGroup);
+    // https://www.gafferongames.com/post/fix_your_timestep
+    const float FIXED_DELTA = 1.0f / 60.0f;
+    GameState gameStates[2];
+    GameState* prevState = &gameStates[0];
+    GameState* nextState = &gameStates[1];
 
-    {
-        auto object = pathLayer->getObjectsByType(tson::ObjectType::Polyline)[0];
-        enemyPath.debugName = object.getName();
-        auto color = object.get<tson::Colori>("Color").asFloat();
-        enemyPath.debugColor = { color.r, color.g, color.b, color.a };
+    GameState interpolatedState;
 
-        glm::vec3 basePosition(
-            (float)object.getPosition().x / map.getTileSize().x - 0.5f,
-            (float)object.getPosition().y / map.getTileSize().y * -1.0f + 0.5f,
-            0.0f);
-
-        glm::mat4 baseRotation = glm::rotate(
-            glm::mat4(1.0f),
-            glm::radians(object.getRotation()),
-            { 0.0f, 0.0f, 1.0f });
-
-        for (auto& point: object.getPolylines())
-        {
-            glm::vec3 pointPosition(
-                (float)point.x / map.getTileSize().x,
-                (float)point.y / map.getTileSize().y * -1.0f,
-                0.0f);
-
-            glm::vec3 finalPosition = baseRotation * glm::vec4(pointPosition, 1.0f);
-            finalPosition += basePosition;
-
-            enemyPath.waypoints.emplace_back(finalPosition);
-        }
-    }
-
-    std::vector<EnemyType> enemyTypes;
-    auto* enemyLayer = map.getLayer("EnemyTypes");
-    CGT_ASSERT_ALWAYS(enemyLayer && enemyLayer->getType() == tson::LayerType::ObjectGroup);
-    for (auto& enemyData : enemyLayer->getObjectsByType(tson::ObjectType::Object))
-    {
-        auto& enemyType = enemyTypes.emplace_back();
-        enemyType.name = enemyData.getName();
-        enemyType.tileId = enemyData.getGid() - rawTileset->getFirstgid();
-        enemyType.maxHealth = enemyData.get<float>("Health");
-        enemyType.speed = enemyData.get<float>("Speed");
-        enemyType.goldReward = enemyData.get<float>("GoldReward");
-        enemyType.unitsPerSpawn = enemyData.get<int>("UnitsPerSpawn");
-    }
-
-    std::vector<TowerType> towerTypes;
-    auto* towerLayer = map.getLayer("TowerTypes");
-    CGT_ASSERT_ALWAYS(towerLayer && towerLayer->getType() == tson::LayerType::ObjectGroup);
-    for (auto& towerData : towerLayer->getObjectsByType(tson::ObjectType::Object))
-    {
-        auto& towerType = towerTypes.emplace_back();
-        towerType.name = towerData.getName();
-        towerType.cost = towerData.get<float>("Cost");
-        towerType.range = towerData.get<float>("Range");
-        towerType.damage = towerData.get<float>("Damage");
-        towerType.shotsPerSecond = towerData.get<float>("ShotsPerSecond");
-        towerType.splashRadius = towerData.get<float>("SplashRadius");
-        towerType.projectileSpeed = towerData.get<float>("ProjectileSpeed");
-
-        towerType.tileId = towerData.getGid() - rawTileset->getFirstgid();
-        towerType.projectileTileId = towerData.get<int>("ProjectileTile") - rawTileset->getFirstgid();
-        towerType.hitTileId = towerData.get<int>("HitTile") - rawTileset->getFirstgid();
-    }
-
-    std::vector<Enemy> enemies;
-    
     std::default_random_engine randEngine;
     std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
 
     cgt::Clock clock;
+    float accumulatedDelta = 0.0f;
     cgt::render::RenderQueue renderQueue;
     cgt::render::RenderStats renderStats {};
     SDL_Event event {};
@@ -123,7 +65,21 @@ int GameMain()
         ZoneScopedN("Main Loop");
 
         const float dt = clock.Tick();
+        accumulatedDelta += dt;
+
         imguiHelper->NewFrame(dt, camera);
+
+        // NOTE: prone to "spiral of death"
+        // see https://www.gafferongames.com/post/fix_your_timestep/
+        while (accumulatedDelta > FIXED_DELTA)
+        {
+            accumulatedDelta -= FIXED_DELTA;
+            std::swap(prevState, nextState);
+            GameState::TimeStep(mapData, *prevState, *nextState, FIXED_DELTA);
+        }
+
+        const float interpolationFactor = glm::smoothstep(0.0f, FIXED_DELTA, accumulatedDelta);
+        GameState::Interpolate(*prevState, *nextState, interpolatedState, interpolationFactor);
 
         {
             ImGui::SetNextWindowSize({200, 80}, ImGuiCond_FirstUseEver);
@@ -181,8 +137,8 @@ int GameMain()
         int mouseX, mouseY;
         SDL_GetMouseState(&mouseX, &mouseY);
         glm::vec2 world = camera.ScreenToWorld((u32)mouseX, (u32)mouseY);
-        auto tilePos = buildableMap.WorldToTile(world);
-        bool buildable = buildableMap.Query(world);
+        auto tilePos = mapData.buildableMap.WorldToTile(world);
+        bool buildable = mapData.buildableMap.Query(world);
 
         {
             ImGui::Begin("Mouse To World");
@@ -229,12 +185,12 @@ int GameMain()
             static u32 selectedEnemyIdx = 0, selectedPathIdx = 0;
             ImGui::Begin("Spawn Enemies");
 
-            if (ImGui::BeginCombo("Enemy Type", enemyTypes[selectedEnemyIdx].name.c_str()))
+            if (ImGui::BeginCombo("Enemy Type", mapData.enemyTypes[selectedEnemyIdx].name.c_str()))
             {
-                for (u32 i = 0; i < enemyTypes.size(); ++i)
+                for (u32 i = 0; i < mapData.enemyTypes.size(); ++i)
                 {
                     bool selected = i == selectedEnemyIdx;
-                    if (ImGui::Selectable(enemyTypes[i].name.c_str(), selected))
+                    if (ImGui::Selectable(mapData.enemyTypes[i].name.c_str(), selected))
                     {
                         selectedEnemyIdx = i;
                     }
@@ -255,20 +211,20 @@ int GameMain()
             {
                 for (i32 i = 0; i < enemiesToSpawn; ++i)
                 {
-                    EnemyType& enemyType = enemyTypes[selectedEnemyIdx];
-                    auto enemy = enemyType.CreateEnemy(enemyPath, selectedEnemyIdx);
-                    glm::vec2 randomShift(
-                        distribution(randEngine),
-                        distribution(randEngine));
-                    enemy.position += randomShift;
-
-                    enemies.emplace_back(enemy);
+//                    EnemyType& enemyType = enemyTypes[selectedEnemyIdx];
+//                    auto enemy = enemyType.CreateEnemy(enemyPath, selectedEnemyIdx);
+//                    glm::vec2 randomShift(
+//                        distribution(randEngine),
+//                        distribution(randEngine));
+//                    enemy.position += randomShift;
+//
+//                    enemies.emplace_back(enemy);
                 }
             }
 
             if (ImGui::Button("Despawn All"))
             {
-                enemies.clear();
+                //enemies.clear();
             }
 
             ImGui::End();
@@ -276,7 +232,7 @@ int GameMain()
 
         {
             ImGui::Begin("Towers");
-            for (auto& towerType : towerTypes)
+            for (auto& towerType : mapData.towerTypes)
             {
                 auto textureId = render->GetImTextureID(tileset->GetTexture());
                 auto uv = (*tileset)[towerType.tileId];
@@ -290,7 +246,7 @@ int GameMain()
                 {
                     ImGui::BeginTooltip();
 
-                    ImGui::Text(towerType.name.c_str());
+                    ImGui::Text("%s", towerType.name.c_str());
                     ImGui::Separator();
 
                     ImGui::TextColored({ 0.9f, 0.8f, 0.2f, 1.0f }, "%.0f$", towerType.cost);
@@ -322,123 +278,6 @@ int GameMain()
             ImGui::End();
         }
 
-        static float flockSteeringSpeed = 12.0f;
-        static float flockWaypointSteeringFactor = 1.0f;
-        static float flockCommonDirectionFactor = 0.2f;
-
-        static float flockSightRange = 3.0f;
-
-        static float flockMaxPathDistance = 0.8f;
-        static float flockPathReadjustFactor = 0.4f;
-
-        static float flockDesiredSpacing = 0.7f;
-        static float flockMinimumSpacing = 0.4;
-        static float flockPushbackFactor = 1.0f;
-
-        static float flockCenteringFactor = 0.3f;
-        {
-            ImGui::Begin("Flocking Options");
-
-            ImGui::DragFloat("Steering Speed", &flockSteeringSpeed, 0.1f, 0.0f, 40.0f);
-            ImGui::Spacing();
-
-            ImGui::DragFloat("Sight Range", &flockSightRange, 0.1f, 0.0f, 5.0f);
-            ImGui::DragFloat("Max Path Distance", &flockMaxPathDistance, 0.1f, 0.0f, 5.0f);
-            ImGui::DragFloat("Desired Spacing", &flockDesiredSpacing, 0.1f, 0.0f, 5.0f);
-            ImGui::DragFloat("Minimum Spacing", &flockMinimumSpacing, 0.1f, 0.0f, 5.0f);
-
-            ImGui::TextUnformatted("Factors");
-            ImGui::DragFloat("Waypoint", &flockWaypointSteeringFactor, 0.1f, 0.0f, 1.0f);
-            ImGui::DragFloat("Common Direction", &flockCommonDirectionFactor, 0.1f, 0.0f, 1.0f);
-            ImGui::DragFloat("Path Readjust", &flockPathReadjustFactor, 0.1f, 0.0f, 1.0f);
-            ImGui::DragFloat("Pushback", &flockPushbackFactor, 0.1f, 0.0f, 2.0f);
-            ImGui::DragFloat("Centering", &flockCenteringFactor, 0.1f, 0.0f, 1.0f);
-
-            ImGui::End();
-        }
-
-        for (auto& enemy : enemies)
-        {
-            if (enemy.targetPointIdx >= enemyPath.waypoints.size())
-            {
-                continue;
-            }
-
-            auto& enemyType = enemyTypes[enemy.typeId];
-
-            const glm::vec2 a = enemyPath.waypoints[enemy.targetPointIdx - 1];
-            const glm::vec2 b = enemyPath.waypoints[enemy.targetPointIdx];
-
-            const glm::vec2 nextWaypointDirection = glm::normalize(b - enemy.position);
-
-            const glm::vec2 closestPathPoint = cgt::math::AABBClosestPoint(
-                enemy.position,
-                glm::min(a, b),
-                glm::max(a, b));
-
-            glm::vec2 pathReadjust(0.0f);
-            glm::vec2 toClosestPathPoint = closestPathPoint - enemy.position;
-            float toClosestPathPointDistSqr = glm::dot(toClosestPathPoint, toClosestPathPoint);
-            if (toClosestPathPointDistSqr > 0.0f)
-            {
-                pathReadjust = glm::normalize(closestPathPoint - enemy.position);
-            }
-
-            if (glm::distance(closestPathPoint, b) < 0.1f)
-            {
-                ++enemy.targetPointIdx;
-            }
-
-            u32 othersInSight = 0;
-            glm::vec2 othersCumulativePosition(0.0f);
-            glm::vec2 othersCumulativeDirection(0.0f);
-            glm::vec2 pushbackFromOthers(0.0f);
-            for (const auto& otherEnemy : enemies)
-            {
-                if (&enemy == &otherEnemy)
-                {
-                    continue;
-                }
-
-                glm::vec2 fromOther = enemy.position - otherEnemy.position;
-                float fromOtherDistSqr = glm::dot(fromOther, fromOther);
-                if (fromOtherDistSqr > flockSightRange * flockSightRange)
-                {
-                    continue;
-                }
-
-                ++othersInSight;
-
-                othersCumulativePosition += otherEnemy.position;
-                othersCumulativeDirection += otherEnemy.direction;
-
-                if (fromOtherDistSqr < flockDesiredSpacing * flockDesiredSpacing)
-                {
-                    float fromOtherDist = glm::sqrt(fromOtherDistSqr);
-                    glm::vec2 fromOtherNorm = fromOther / fromOtherDist;
-                    float pushbackForce = 1.0f - glm::smoothstep(flockMinimumSpacing, flockDesiredSpacing, fromOtherDist);
-                    pushbackFromOthers += fromOtherNorm * pushbackForce;
-                }
-            }
-
-            glm::vec2 directionDelta = nextWaypointDirection * flockWaypointSteeringFactor;
-            if (othersInSight > 0)
-            {
-                glm::vec2 othersAveragePosition = othersCumulativePosition / (float)othersInSight;
-                glm::vec2 centeringDirection = glm::normalize(othersAveragePosition - enemy.position);
-                directionDelta += centeringDirection * flockCenteringFactor;
-
-                directionDelta += glm::normalize(othersCumulativeDirection) * flockCommonDirectionFactor;
-
-                //directionDelta += pushbackFromOthers;
-            }
-
-            directionDelta += pathReadjust * flockPathReadjustFactor;
-
-            enemy.direction = glm::normalize(enemy.direction + directionDelta * flockSteeringSpeed * scaledDt);
-            enemy.position += enemy.direction * enemyType.speed * scaledDt;
-            enemy.position += pushbackFromOthers * enemyType.speed * flockPushbackFactor * scaledDt;
-        }
 
         renderQueue.Reset();
         renderQueue.clearColor = { 0.5f, 0.5f, 0.5f, 1.0f };
@@ -446,9 +285,9 @@ int GameMain()
         baseMapLayer->Render(renderQueue, *tileset);
         propsMapLayer->Render(renderQueue, *tileset);
 
-        for (auto& enemy : enemies)
+        for (auto& enemy : interpolatedState.enemies)
         {
-            auto& enemyType = enemyTypes[enemy.typeId];
+            auto& enemyType = mapData.enemyTypes[enemy.type];
 
             cgt::render::SpriteDrawRequest sprite;
             sprite.rotation = cgt::math::VectorAngle(enemy.direction);
@@ -460,7 +299,7 @@ int GameMain()
             renderQueue.sprites.emplace_back(std::move(sprite));
         }
 
-        enemyPath.DebugRender();
+        mapData.enemyPath.DebugRender();
 
         renderStats = render->Submit(renderQueue, camera);
         imguiHelper->RenderUi(camera);

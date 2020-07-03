@@ -1,20 +1,16 @@
 #pragma once
 
-#include <examples/tower_defence/tilemap.h>
-#include <examples/tower_defence/map_data.h>
-
-typedef u32 EnemyTypeId;
-
 struct Enemy
 {
+    typedef u32 TypeId;
+
+    TypeId type;
+
     glm::vec2 position;
     glm::vec2 direction;
-
-    EnemyTypeId typeId;
+    u32 targetPointIdx;
 
     float remainingHealth;
-
-    u32 targetPointIdx;
 };
 
 struct EnemyType
@@ -23,21 +19,14 @@ struct EnemyType
     float speed;
     float goldReward;
     u32 unitsPerSpawn;
-    TileSet::TileId tileId;
+    u32 tileId;
 
     std::string name;
-
-    Enemy CreateEnemy(const EnemyPath& path, EnemyTypeId typeId)
-    {
-        Enemy enemy;
-        const auto a = path.waypoints[0];
-        const auto b = path.waypoints[1];
-        enemy.position = a;
-        enemy.direction = glm::normalize(b - a);
-        enemy.typeId = typeId;
-        enemy.remainingHealth = maxHealth;
-        enemy.targetPointIdx = 1;
-
-        return enemy;
-    }
 };
+
+typedef std::vector<EnemyType> EnemyTypeCollection;
+
+class EnemyPath;
+
+void LoadEnemyTypes(tson::Map& map, EnemyTypeCollection& outEnemyTypes);
+void SetupEnemy(const EnemyTypeCollection& enemyTypes, Enemy::TypeId typeId, const EnemyPath& path, Enemy& outEnemy);

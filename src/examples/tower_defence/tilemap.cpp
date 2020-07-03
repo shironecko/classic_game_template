@@ -12,8 +12,10 @@ SpriteUV TileSet::operator[](TileId id) const
 {
     CGT_ASSERT(id < m_TileCount);
 
-    const u32 tileColumn = id % m_Columns;
-    const u32 tileRow = id / m_Columns;
+    u32 tileIndex = id - m_FirstTileId;
+
+    const u32 tileColumn = tileIndex % m_Columns;
+    const u32 tileRow = tileIndex / m_Columns;
 
     const u32 tileX = m_Margin + m_TileWidth * tileColumn + m_Spacing * tileColumn;
     const u32 tileY = m_Margin + m_TileHeight * tileRow + m_Spacing * tileRow;
@@ -41,6 +43,8 @@ TileSet::TileSet(const tson::Tileset& tileset, cgt::render::TextureHandle textur
 
     m_TileWidth = tileset.getTileSize().x;
     m_TileHeight = tileset.getTileSize().y;
+
+    m_FirstTileId = tileset.getFirstgid();
 }
 
 std::unique_ptr<StaticTileGrid> StaticTileGrid::Load(const tson::Map& map, const tson::Layer& layer, const tson::Tileset& tileset, u8 depth)
@@ -80,7 +84,6 @@ StaticTileGrid::StaticTileGrid(const tson::Map& map, const tson::Layer& layer, c
     , m_Depth(depth)
 {
     m_Tiles.resize(m_Colums * layer.getSize().y, TileSet::INVALID_TILE_ID);
-    tson::Tileset* currentTileset = nullptr;
     for (auto& [pos, tile] : layer.getTileData())
     {
         u32 tileIdx = std::get<1>(pos) * m_Colums + std::get<0>(pos);
@@ -90,7 +93,7 @@ StaticTileGrid::StaticTileGrid(const tson::Map& map, const tson::Layer& layer, c
             tileGuid >= tileset.getFirstgid() && tileGuid < tileset.getFirstgid() + tileset.getTileCount(),
             "Only one tileset per layer is supported!");
 
-        m_Tiles[tileIdx] = tileGuid - tileset.getFirstgid();
+        m_Tiles[tileIdx] = tileGuid;
     }
 }
 

@@ -34,6 +34,8 @@ private:
     u32 m_TileWidth;
     u32 m_TileHeight;
 
+    TileId m_FirstTileId;
+
     cgt::render::TextureHandle m_Texture;
 };
 
