@@ -13,6 +13,7 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
     next.towers.clear();
     next.towers.reserve(initial.towers.size());
 
+    next.playerState = initial.playerState;
     next.randomEngine = initial.randomEngine;
 
     // enemy movement system

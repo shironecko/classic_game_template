@@ -42,15 +42,21 @@ int GameMain()
     MapData mapData;
     MapData::Load(map, mapData);
 
+    GameCommandQueue gameCommands;
+
     // https://www.gafferongames.com/post/fix_your_timestep
     const float FIXED_DELTA = 1.0f / 30.0f;
     GameState gameStates[2];
     GameState* prevState = &gameStates[0];
     GameState* nextState = &gameStates[1];
 
+    prevState->playerState.gold = 100;
+    prevState->playerState.lives = 20;
+    // warm-up
+    GameState::TimeStep(mapData, *prevState, *nextState, gameCommands, FIXED_DELTA);
+
     GameState interpolatedState;
 
-    GameCommandQueue gameCommands;
 
     cgt::Clock clock;
     float accumulatedDelta = 0.0f;
@@ -58,13 +64,20 @@ int GameMain()
     cgt::render::RenderStats renderStats {};
     SDL_Event event {};
 
+    const float DT_SCALE_FACTORS[] = { 0.0f, 0.25f, 0.5f, 1.0f, 2.0f, 4.0f };
+    const char* DT_SCALE_FACTORS_STR[] = { "0", "0.25", "0.5", "1.0", "2.0", "4.0" };
+    static u32 selectedDtScaleIdx = 3;
+
     bool quitRequested = false;
     while (!quitRequested)
     {
         ZoneScopedN("Main Loop");
 
         const float dt = clock.Tick();
-        accumulatedDelta += dt;
+        {
+            const float scaledDt = dt * DT_SCALE_FACTORS[selectedDtScaleIdx];
+            accumulatedDelta += scaledDt;
+        }
 
         imguiHelper->NewFrame(dt, camera);
 
@@ -141,6 +154,18 @@ int GameMain()
         bool buildable = mapData.buildableMap.Query(world);
 
         {
+            ImGui::BeginMainMenuBar();
+
+            ImGui::TextUnformatted("Gold ");
+            ImGui::TextColored({ 0.9f, 0.8f, 0.2f, 1.0f }, "%.0f$", interpolatedState.playerState.gold);
+
+            ImGui::TextUnformatted("Lives ");
+            ImGui::TextColored({ 0.8f, 0.2f, 0.2f, 1.0f }, "%u", interpolatedState.playerState.lives);
+
+            ImGui::EndMainMenuBar();
+        }
+
+        {
             ImGui::Begin("Mouse To World");
 
             ImGui::Text("Screen position: (%d, %d)", mouseX, mouseY);
@@ -162,9 +187,6 @@ int GameMain()
             Im3d::PopAlpha();
         }
 
-        const float DT_SCALE_FACTORS[] = { 0.0f, 0.25f, 0.5f, 1.0f, 2.0f, 4.0f };
-        const char* DT_SCALE_FACTORS_STR[] = { "0", "0.25", "0.5", "1.0", "2.0", "4.0" };
-        static u32 selectedDtScaleIdx = 3;
         {
             ImGui::Begin("Gameplay Settings");
 
@@ -179,10 +201,8 @@ int GameMain()
             ImGui::End();
         }
 
-        const float scaledDt = dt * DT_SCALE_FACTORS[selectedDtScaleIdx];
-
         {
-            static u32 selectedEnemyIdx = 0, selectedPathIdx = 0;
+            static u32 selectedEnemyIdx = 0;
             ImGui::Begin("Spawn Enemies");
 
             if (ImGui::BeginCombo("Enemy Type", mapData.enemyTypes[selectedEnemyIdx].name.c_str()))
