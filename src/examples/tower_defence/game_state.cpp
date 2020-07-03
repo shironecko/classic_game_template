@@ -157,6 +157,15 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
 
 void GameState::Interpolate(const GameState& prevState, const GameState& nextState, GameState& outState, float factor)
 {
-    // TODO: actual interpolation
-    outState = prevState;
+    // TODO: more complete interpolation
+    outState = nextState;
+
+    for (u32 i = 0; i < prevState.enemies.size() && i < nextState.enemies.size(); ++i)
+    {
+        const Enemy& a = prevState.enemies[i];
+        const Enemy& b = nextState.enemies[i];
+        Enemy& result = outState.enemies[i];
+        result.position = glm::lerp(a.position, b.position, factor);
+        result.direction = glm::lerp(a.direction, b.direction, factor);
+    }
 }

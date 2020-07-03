@@ -43,7 +43,7 @@ int GameMain()
     MapData::Load(map, mapData);
 
     // https://www.gafferongames.com/post/fix_your_timestep
-    const float FIXED_DELTA = 1.0f / 20.0f;
+    const float FIXED_DELTA = 1.0f / 30.0f;
     GameState gameStates[2];
     GameState* prevState = &gameStates[0];
     GameState* nextState = &gameStates[1];
