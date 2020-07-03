@@ -5,6 +5,8 @@
 
 void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameState& next, const GameCommandQueue& commands, float delta)
 {
+    ZoneScoped;
+
     // clear next state and prepare it advancement
     next.enemies.clear();
     next.enemies.reserve(initial.enemies.size());
@@ -157,6 +159,8 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
 
 void GameState::Interpolate(const GameState& prevState, const GameState& nextState, GameState& outState, float factor)
 {
+    ZoneScoped;
+
     // TODO: more complete interpolation
     outState = nextState;
 
