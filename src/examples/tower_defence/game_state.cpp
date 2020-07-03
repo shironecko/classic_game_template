@@ -3,13 +3,15 @@
 #include <examples/tower_defence/game_state.h>
 #include <examples/tower_defence/map_data.h>
 
-void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameState& next, float delta)
+void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameState& next, const GameCommandQueue& commands, float delta)
 {
     // clear next state and prepare it advancement
     next.enemies.clear();
     next.enemies.reserve(initial.enemies.size());
     next.towers.clear();
     next.towers.reserve(initial.towers.size());
+
+    next.randomEngine = initial.randomEngine;
 
     // enemy movement system
     static float flockSteeringSpeed = 12.0f;
@@ -26,26 +28,6 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
     static float flockPushbackFactor = 1.0f;
 
     static float flockCenteringFactor = 0.3f;
-    {
-        ImGui::Begin("Flocking Options");
-
-        ImGui::DragFloat("Steering Speed", &flockSteeringSpeed, 0.1f, 0.0f, 40.0f);
-        ImGui::Spacing();
-
-        ImGui::DragFloat("Sight Range", &flockSightRange, 0.1f, 0.0f, 5.0f);
-        ImGui::DragFloat("Max Path Distance", &flockMaxPathDistance, 0.1f, 0.0f, 5.0f);
-        ImGui::DragFloat("Desired Spacing", &flockDesiredSpacing, 0.1f, 0.0f, 5.0f);
-        ImGui::DragFloat("Minimum Spacing", &flockMinimumSpacing, 0.1f, 0.0f, 5.0f);
-
-        ImGui::TextUnformatted("Factors");
-        ImGui::DragFloat("Waypoint", &flockWaypointSteeringFactor, 0.1f, 0.0f, 1.0f);
-        ImGui::DragFloat("Common Direction", &flockCommonDirectionFactor, 0.1f, 0.0f, 1.0f);
-        ImGui::DragFloat("Path Readjust", &flockPathReadjustFactor, 0.1f, 0.0f, 1.0f);
-        ImGui::DragFloat("Pushback", &flockPushbackFactor, 0.1f, 0.0f, 2.0f);
-        ImGui::DragFloat("Centering", &flockCenteringFactor, 0.1f, 0.0f, 1.0f);
-
-        ImGui::End();
-    }
 
     const auto& enemyPath = mapData.enemyPath;
     for (const Enemy& enemy : initial.enemies)
@@ -132,6 +114,44 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
         enemyNext.direction = glm::normalize(enemy.direction + directionDelta * flockSteeringSpeed * delta);
         enemyNext.position += enemy.direction * enemyType.speed * delta;
         enemyNext.position += pushbackFromOthers * enemyType.speed * flockPushbackFactor * delta;
+    }
+
+    // game commands execution
+    for (auto& command : commands)
+    {
+        switch (command.type)
+        {
+        case GameCommand::Type::Debug_SpawnEnemy:
+        {
+            auto& cmdData = command.data.debug_spawnEnemyData;
+            const EnemyType& enemyType = mapData.enemyTypes[cmdData.enemyType];
+
+            Enemy& enemy = next.enemies.emplace_back();
+            SetupEnemy(mapData.enemyTypes, cmdData.enemyType, mapData.enemyPath, enemy);
+
+            std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
+            glm::vec2 randomShift(
+                distribution(next.randomEngine),
+                distribution(next.randomEngine));
+            enemy.position += randomShift;
+            break;
+        }
+        case GameCommand::Type::Debug_DespawnAllEnemies:
+        {
+            next.enemies.clear();
+            break;
+        }
+        case GameCommand::Type::BuildTower:
+        {
+            auto& cmdData = command.data.buildTowerData;
+            break;
+        }
+        default:
+        {
+            CGT_PANIC("Unsupported command type!");
+            break;
+        }
+        }
     }
 }
 

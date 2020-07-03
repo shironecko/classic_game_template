@@ -43,15 +43,14 @@ int GameMain()
     MapData::Load(map, mapData);
 
     // https://www.gafferongames.com/post/fix_your_timestep
-    const float FIXED_DELTA = 1.0f / 60.0f;
+    const float FIXED_DELTA = 1.0f / 20.0f;
     GameState gameStates[2];
     GameState* prevState = &gameStates[0];
     GameState* nextState = &gameStates[1];
 
     GameState interpolatedState;
 
-    std::default_random_engine randEngine;
-    std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
+    GameCommandQueue gameCommands;
 
     cgt::Clock clock;
     float accumulatedDelta = 0.0f;
@@ -75,7 +74,8 @@ int GameMain()
         {
             accumulatedDelta -= FIXED_DELTA;
             std::swap(prevState, nextState);
-            GameState::TimeStep(mapData, *prevState, *nextState, FIXED_DELTA);
+            GameState::TimeStep(mapData, *prevState, *nextState, gameCommands, FIXED_DELTA);
+            gameCommands.clear();
         }
 
         const float interpolationFactor = glm::smoothstep(0.0f, FIXED_DELTA, accumulatedDelta);
@@ -211,20 +211,17 @@ int GameMain()
             {
                 for (i32 i = 0; i < enemiesToSpawn; ++i)
                 {
-//                    EnemyType& enemyType = enemyTypes[selectedEnemyIdx];
-//                    auto enemy = enemyType.CreateEnemy(enemyPath, selectedEnemyIdx);
-//                    glm::vec2 randomShift(
-//                        distribution(randEngine),
-//                        distribution(randEngine));
-//                    enemy.position += randomShift;
-//
-//                    enemies.emplace_back(enemy);
+                    auto& gameCmd = gameCommands.emplace_back();
+                    gameCmd.type = GameCommand::Type::Debug_SpawnEnemy;
+                    auto& cmdData = gameCmd.data.debug_spawnEnemyData;
+                    cmdData.enemyType = selectedEnemyIdx;
                 }
             }
 
             if (ImGui::Button("Despawn All"))
             {
-                //enemies.clear();
+                auto& gameCmd = gameCommands.emplace_back();
+                gameCmd.type = GameCommand::Type::Debug_DespawnAllEnemies;
             }
 
             ImGui::End();
