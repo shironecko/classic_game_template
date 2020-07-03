@@ -7,6 +7,7 @@
 #include <tmx.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/compatibility.hpp>
 
 #include <bindings/imgui_impl_sdl.h>
 
