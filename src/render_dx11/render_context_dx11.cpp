@@ -399,11 +399,12 @@ TextureHandle RenderContextDX11::LoadTexture(const std::filesystem::path& absolu
 
 HRESULT RenderContextDX11::LoadTextureFromMemory(const u8* data, usize size, TextureData& outData)
 {
+    ComPtr<ID3D11Resource> textureResource;
     HRESULT hresult = DirectX::CreateWICTextureFromMemory(
         m_Device.Get(),
         data,
         size,
-        outData.m_Resource.GetAddressOf(),
+        textureResource.GetAddressOf(),
         outData.m_View.GetAddressOf());
 
     return hresult;

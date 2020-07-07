@@ -17,7 +17,6 @@ private:
 
     TextureData() = default;
 
-    ComPtr<ID3D11Resource> m_Resource;
     ComPtr<ID3D11ShaderResourceView> m_View;
 };
 
