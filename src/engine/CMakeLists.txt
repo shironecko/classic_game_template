@@ -22,7 +22,6 @@ find_package(SDL2 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
-find_package(tmx CONFIG REQUIRED)
 
 target_link_libraries(engine
     PUBLIC
@@ -30,7 +29,6 @@ target_link_libraries(engine
         fmt::fmt fmt::fmt-header-only
         imgui::imgui
         glm
-        tmx tmx_shared
         render_core
     PRIVATE
         $<$<PLATFORM_ID:Windows>:render_dx11>

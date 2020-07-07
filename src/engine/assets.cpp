@@ -70,22 +70,4 @@ std::vector<u8> LoadFileBytes(const std::filesystem::path& absolutePath)
 
 }
 
-std::filesystem::path PrependAssetRoot(const std::filesystem::path& relativePath)
-{
-    CGT_ASSERT(relativePath.is_relative());
-
-    const auto absolutePath = GetAssetsRoot() / relativePath;
-    return absolutePath;
-}
-
-tmx_map* LoadTiledMap(const std::filesystem::path& relativePath)
-{
-    auto absolutePath = PrependAssetRoot(relativePath);
-    auto mapData = LoadFileBytes(absolutePath);
-    tmx_map* map = tmx_load_buffer((char*)mapData.data(), mapData.size());
-    CGT_ASSERT_ALWAYS_MSG(map != nullptr, "Failed to load a tiled map at: {}\nTMX error: {}", absolutePath, tmx_strerr());
-
-    return map;
-}
-
 }
