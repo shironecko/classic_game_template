@@ -1,12 +1,12 @@
 #include <engine/pch.h>
 
-#include <engine/map_helpers.h>
+#include <engine/tileset_helper.h>
 #include <engine/assets.h>
 
 namespace cgt
 {
 
-void Tileset::Load(const tson::Tileset& tileset, cgt::render::TextureHandle texture, Tileset& outTileset)
+void TilesetHelper::Tileset::Load(const tson::Tileset& tileset, cgt::render::TextureHandle texture, Tileset& outTileset)
 {
     outTileset.m_Texture = std::move(texture);
 
@@ -25,7 +25,7 @@ void Tileset::Load(const tson::Tileset& tileset, cgt::render::TextureHandle text
     outTileset.m_FirstTileIdx = tileset.getFirstgid();
 }
 
-bool Tileset::GetTileSpriteSrc(u32 tileIdx, render::SpriteSource& outSrc)
+bool TilesetHelper::Tileset::GetTileSpriteSrc(u32 tileIdx, render::SpriteSource& outSrc)
 {
     if (tileIdx >= m_FirstTileIdx && tileIdx < m_FirstTileIdx + m_TileCount)
     {
