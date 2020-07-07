@@ -91,20 +91,26 @@ void TilesetHelper::RenderTileLayers(tson::Map& map, cgt::render::SpriteDrawList
             continue;
         }
 
-        for (auto& [pos, tile] : mapLayer.getTileData())
-        {
-            float x = float(std::get<0>(pos));
-
-            // TODO: support non-standard render orders?
-            float y = float(std::get<1>(pos)) * -1.0f; // reverse Y axis
-
-            auto& sprite = outDrawList.AddSprite();
-            GetTileSpriteSrc(tile->getId(), sprite.src);
-            sprite.layer = spriteLayer;
-            sprite.position = { x, y };
-        }
-
+        RenderTileLayer(mapLayer, outDrawList, spriteLayer);
         ++spriteLayer;
+    }
+}
+
+void TilesetHelper::RenderTileLayer(tson::Layer& layer, cgt::render::SpriteDrawList& outDrawList, u8 spriteLayer)
+{
+    CGT_ASSERT(layer.getType() == tson::LayerType::TileLayer);
+
+    for (auto& [pos, tile] : layer.getTileData())
+    {
+        float x = float(std::get<0>(pos));
+
+        // TODO: support non-standard render orders?
+        float y = float(std::get<1>(pos)) * -1.0f; // reverse Y axis
+
+        auto& sprite = outDrawList.AddSprite();
+        GetTileSpriteSrc(tile->getId(), sprite.src);
+        sprite.layer = spriteLayer;
+        sprite.position = { x, y };
     }
 }
 

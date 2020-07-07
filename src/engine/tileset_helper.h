@@ -14,6 +14,7 @@ public:
 
     bool GetTileSpriteSrc(u32 tileIdx, cgt::render::SpriteSource& outSrc);
     void RenderTileLayers(tson::Map& map, cgt::render::SpriteDrawList& outDrawList, u8 baseSpriteLayer);
+    void RenderTileLayer(tson::Layer& layer, cgt::render::SpriteDrawList& outDrawList, u8 spriteLayer);
 
 private:
     TilesetHelper(tson::Map& map, const std::filesystem::path& baseMapAbsPath, cgt::render::IRenderContext& render);
