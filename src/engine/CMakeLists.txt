@@ -3,7 +3,6 @@ add_library(engine
     window.cpp window.h
     pch.cpp pch.h external_libs.h system.h
     assets.cpp assets.h
-    tilemap.h tilemap.cpp
     clock.cpp clock.h
     imgui_helper.cpp imgui_helper.h
     math.cpp math.h
