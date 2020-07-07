@@ -2,6 +2,7 @@
 
 #include <examples/tower_defence/enemy_data.h>
 #include <examples/tower_defence/tower_data.h>
+#include <examples/tower_defence/projectile_data.h>
 #include <examples/tower_defence/map_data.h>
 
 struct GameCommand
@@ -44,7 +45,10 @@ struct GameState
     PlayerState playerState;
     std::vector<Enemy> enemies;
     std::vector<Tower> towers;
+    std::vector<Projectile> projectiles;
 
     static void TimeStep(const MapData& mapData, const GameState& initialState, GameState& outNextState, const GameCommandQueue& commands, float delta);
     static void Interpolate(const GameState& prevState, const GameState& nextState, GameState& outState, float factor);
+
+    static void QueryEnemiesInRadius(const std::vector<Enemy>& enemies, glm::vec2 position, float radius, std::vector<u32>& outResults);
 };

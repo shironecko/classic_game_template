@@ -66,12 +66,17 @@ int GameMain()
 
     const float DT_SCALE_FACTORS[] = { 0.0f, 0.25f, 0.5f, 1.0f, 2.0f, 4.0f };
     const char* DT_SCALE_FACTORS_STR[] = { "0", "0.25", "0.5", "1.0", "2.0", "4.0" };
-    static u32 selectedDtScaleIdx = 3;
+    u32 selectedDtScaleIdx = 3;
+
+    u32 selectedTowerTypeId = 0;
 
     bool quitRequested = false;
     while (!quitRequested)
     {
         ZoneScopedN("Main Loop");
+
+        renderQueue.Reset();
+        renderQueue.clearColor = { 0.5f, 0.5f, 0.5f, 1.0f };
 
         const float dt = clock.Tick();
         {
@@ -103,6 +108,7 @@ int GameMain()
             ImGui::End();
         }
 
+        bool lmbWasClicked = false;
         while (window->PollEvent(event))
         {
             switch (event.type)
@@ -114,6 +120,11 @@ int GameMain()
                 auto wheel = event.wheel;
                 scaleFactorIdx -= wheel.y;
                 scaleFactorIdx = glm::clamp(scaleFactorIdx, 0, (i32)SDL_arraysize(SCALE_FACTORS) - 1);
+                break;
+            case SDL_MOUSEBUTTONDOWN:
+                auto button = event.button;
+                lmbWasClicked = button.button == SDL_BUTTON_LEFT;
+                break;
             }
         }
 
@@ -177,14 +188,33 @@ int GameMain()
         }
 
         auto selectionColor = buildable
-            ? glm::vec4(0.0f, 1.0f, 0.0f, 1.0f)
-            : glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+            ? glm::vec4(0.0f, 1.0f, 0.0f, 0.1f)
+            : glm::vec4(1.0f, 0.0f, 0.0f, 0.1f);
         {
-            Im3d::PushAlpha(0.2f);
             Im3d::PushColor(Im3d::Color(selectionColor));
             Im3d::DrawAlignedBoxFilled({ tilePos.x - 0.5f, tilePos.y - 0.5f, 0.0f }, { tilePos.x + 0.5f, tilePos.y + 0.5f, 0.0f });
             Im3d::PopColor();
-            Im3d::PopAlpha();
+
+            const TowerType& towerType = mapData.towerTypes[selectedTowerTypeId];
+            auto uv = (*tileset)[towerType.tileId];
+
+            cgt::render::SpriteDrawRequest sprite;
+            sprite.position = glm::vec2(tilePos.x, tilePos.y);
+            sprite.texture = tileset->GetTexture();
+            sprite.uvMin = uv.min;
+            sprite.uvMax = uv.max;
+            sprite.colorTint = glm::vec4(glm::vec3(selectionColor), 0.3f);
+            sprite.depth = 5;
+            renderQueue.sprites.emplace_back(std::move(sprite));
+        }
+
+        if (lmbWasClicked && buildable)
+        {
+            auto& gameCmd = gameCommands.emplace_back();
+            gameCmd.type = GameCommand::Type::BuildTower;
+            auto& cmdData = gameCmd.data.buildTowerData;
+            cmdData.towerType = selectedTowerTypeId;
+            cmdData.position = glm::vec2(tilePos.x, tilePos.y);
         }
 
         {
@@ -249,14 +279,15 @@ int GameMain()
 
         {
             ImGui::Begin("Towers");
-            for (auto& towerType : mapData.towerTypes)
+            for (u32 i = 0; i <mapData.towerTypes.size(); ++i)
             {
+                TowerType& towerType = mapData.towerTypes[i];
                 auto textureId = render->GetImTextureID(tileset->GetTexture());
                 auto uv = (*tileset)[towerType.tileId];
 
                 if (ImGui::ImageButton(textureId, { 64.0f, 64.0f }, { uv.min.x, uv.min.y }, { uv.max.x, uv.max.y }))
                 {
-
+                    selectedTowerTypeId = i;
                 }
 
                 if (ImGui::IsItemHovered())
@@ -295,10 +326,6 @@ int GameMain()
             ImGui::End();
         }
 
-
-        renderQueue.Reset();
-        renderQueue.clearColor = { 0.5f, 0.5f, 0.5f, 1.0f };
-
         baseMapLayer->Render(renderQueue, *tileset);
         propsMapLayer->Render(renderQueue, *tileset);
 
@@ -313,6 +340,20 @@ int GameMain()
             auto uv = (*tileset)[enemyType.tileId];
             sprite.uvMin = uv.min;
             sprite.uvMax = uv.max;
+            renderQueue.sprites.emplace_back(std::move(sprite));
+        }
+
+        for (auto& tower : interpolatedState.towers)
+        {
+            auto& towerType = mapData.towerTypes[tower.type];
+
+            cgt::render::SpriteDrawRequest sprite;
+            sprite.position = tower.position;
+            sprite.texture = tileset->GetTexture();
+            auto uv = (*tileset)[towerType.tileId];
+            sprite.uvMin = uv.min;
+            sprite.uvMax = uv.max;
+            sprite.depth = 3;
             renderQueue.sprites.emplace_back(std::move(sprite));
         }
 

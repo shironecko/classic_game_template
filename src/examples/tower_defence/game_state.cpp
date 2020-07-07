@@ -119,6 +119,14 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
         enemyNext.position += pushbackFromOthers * enemyType.speed * flockPushbackFactor * delta;
     }
 
+    // towers update
+    for (const Tower& tower : initial.towers)
+    {
+        // TODO: actual update
+        Tower& towerNext = next.towers.emplace_back();
+        towerNext = tower;
+    }
+
     // game commands execution
     for (auto& command : commands)
     {
@@ -147,6 +155,13 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
         case GameCommand::Type::BuildTower:
         {
             auto& cmdData = command.data.buildTowerData;
+            const TowerType& type = mapData.towerTypes[cmdData.towerType];
+            if (next.playerState.gold >= type.cost)
+            {
+                next.playerState.gold -= type.cost;
+                Tower& newTower = next.towers.emplace_back();
+                SetupTower(mapData.towerTypes, cmdData.towerType, cmdData.position, newTower);
+            }
             break;
         }
         default:
@@ -172,5 +187,20 @@ void GameState::Interpolate(const GameState& prevState, const GameState& nextSta
         Enemy& result = outState.enemies[i];
         result.position = glm::lerp(a.position, b.position, factor);
         result.direction = glm::lerp(a.direction, b.direction, factor);
+    }
+}
+
+void GameState::QueryEnemiesInRadius(const std::vector<Enemy>& enemies, glm::vec2 position, float radius, std::vector<u32>& outResults)
+{
+    const float radiusSqr = radius * radius;
+    for (u32 i = 0; i < enemies.size(); ++i)
+    {
+        const Enemy& enemy = enemies[i];
+        const glm::vec2 x = enemy.position - position;
+        const float distanceSqr = glm::dot(x, x);
+        if (distanceSqr <= radiusSqr)
+        {
+            outResults.emplace_back(i);
+        }
     }
 }
