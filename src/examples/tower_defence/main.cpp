@@ -203,7 +203,7 @@ int GameMain()
             sprite.uvMin = uv.min;
             sprite.uvMax = uv.max;
             sprite.colorTint = glm::vec4(glm::vec3(selectionColor), 0.3f);
-            sprite.depth = 5;
+            sprite.layer = 5;
         }
 
         if (lmbWasClicked && buildable)
@@ -350,7 +350,7 @@ int GameMain()
             auto uv = (*tileset)[towerType.tileId];
             sprite.uvMin = uv.min;
             sprite.uvMax = uv.max;
-            sprite.depth = 3;
+            sprite.layer = 3;
         }
 
         mapData.enemyPath.DebugRender();

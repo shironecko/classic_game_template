@@ -19,7 +19,7 @@ struct SpriteDrawRequest
     glm::vec2 scale = glm::vec2(1.0f);
     TextureHandle texture;
     float rotation = 0.0f;
-    u8 depth = 0;
+    u8 layer = 0;
 };
 
 class SpriteDrawList : private NonCopyable

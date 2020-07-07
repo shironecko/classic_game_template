@@ -14,7 +14,7 @@ void SpriteDrawList::SortForRendering(IRenderContext& render)
     {
         usize aKey = render.GetTextureSortKey(a.texture);
         usize bKey = render.GetTextureSortKey(b.texture);
-        return a.depth < b.depth || aKey < bKey;
+        return a.layer < b.layer || aKey < bKey;
     });
 }
 
