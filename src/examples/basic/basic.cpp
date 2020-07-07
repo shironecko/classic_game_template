@@ -12,7 +12,7 @@ int GameMain()
 
     auto imguiHelper = cgt::ImGuiHelper::Create(window, render);
 
-    cgt::render::RenderQueue renderQueue;
+    cgt::render::SpriteDrawList drawList;
     cgt::render::CameraSimpleOrtho camera(*window);
     camera.pixelsPerUnit = 16.0f;
 
@@ -45,13 +45,12 @@ int GameMain()
             ImGui::End();
         }
 
-        renderQueue.Reset();
-        renderQueue.clearColor = glm::vec4(1.0f, 0.3f, 1.0f, 1.0f);
-        cgt::render::SpriteDrawRequest testSprite;
+        drawList.clear();
+        auto& testSprite = drawList.AddSprite();
         testSprite.scale = {10.0f, 10.0f};
-        renderQueue.sprites.emplace_back(testSprite);
 
-        renderStats = render->Submit(renderQueue, camera);
+        render->Clear({ 1.0f, 0.3f, 1.0f, 1.0f });
+        renderStats = render->Submit(drawList, camera);
         imguiHelper->RenderUi(camera);
         render->Present();
     }

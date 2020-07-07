@@ -1,7 +1,7 @@
 add_library(render_core
     render_config.cpp render_config.h
     i_render_context.h
-    render_queue.cpp render_queue.h
+    sprite_draw_list.cpp sprite_draw_list.h
     missingno.png.h
     i_camera.h
     camera_simple_ortho.cpp camera_simple_ortho.h

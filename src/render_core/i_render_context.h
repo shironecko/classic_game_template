@@ -2,7 +2,7 @@
 
 #include <memory>
 #include <render_core/render_config.h>
-#include <render_core/render_queue.h>
+#include <render_core/sprite_draw_list.h>
 #include <render_core/i_camera.h>
 
 namespace cgt::render
@@ -22,8 +22,10 @@ public:
 
     virtual TextureHandle LoadTexture(const std::filesystem::path& absolutePath) = 0;
     virtual ImTextureID GetImTextureID(const TextureHandle& texture) = 0;
+    virtual usize GetTextureSortKey(const TextureHandle& texture) = 0;
 
-    virtual RenderStats Submit(RenderQueue& queue, const ICamera& camera) = 0;
+    virtual void Clear(glm::vec4 clearColor) = 0;
+    virtual RenderStats Submit(SpriteDrawList& drawList, const ICamera& camera, bool sortBeforeRendering = true) = 0;
     virtual void Present() = 0;
 
     virtual ~IRenderContext() = default;

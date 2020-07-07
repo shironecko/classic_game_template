@@ -211,27 +211,24 @@ std::shared_ptr<RenderContextDX11> RenderContextDX11::BuildWithConfig(RenderConf
     return context;
 }
 
-RenderStats RenderContextDX11::Submit(RenderQueue& queue, const ICamera& camera)
+void RenderContextDX11::Clear(glm::vec4 clearColor)
+{
+    ZoneScoped;
+
+    SetUpRenderTarget();
+    m_Context->ClearRenderTargetView(m_RTView.Get(), &clearColor.x);
+}
+
+RenderStats RenderContextDX11::Submit(SpriteDrawList& drawList, const ICamera& camera, bool sortBeforeRendering)
 {
     ZoneScoped;
 
     RenderStats stats {};
     {
         ZoneScopedN("Setup");
-        stats.spriteCount = queue.sprites.size();
+        stats.spriteCount = drawList.size();
 
-        D3D11_VIEWPORT viewport {};
-        viewport.TopLeftX = 0.0f;
-        viewport.TopLeftY = 0.0f;
-        viewport.Width = (float)m_Window->GetWidth();
-        viewport.Height = (float)m_Window->GetHeight();
-        viewport.MinDepth = 0.0f;
-        viewport.MaxDepth = 1.0f;
-        m_Context->RSSetViewports(1, &viewport);
-        m_Context->RSSetState(m_CommonStates->CullNone());
-
-        m_Context->OMSetRenderTargets(1, m_RTView.GetAddressOf(), nullptr);
-        m_Context->ClearRenderTargetView(m_RTView.Get(), &queue.clearColor.x);
+        SetUpRenderTarget();
 
         m_Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         m_Context->IASetIndexBuffer(m_QuadIndices.Get(), DXGI_FORMAT_R16_UINT, 0);
@@ -267,12 +264,9 @@ RenderStats RenderContextDX11::Submit(RenderQueue& queue, const ICamera& camera)
         m_Context->OMSetDepthStencilState(m_CommonStates->DepthNone(), 0);
     }
 
+    if (sortBeforeRendering)
     {
-        ZoneScopedN("Sort");
-        std::sort(queue.sprites.begin(), queue.sprites.end(), [](const SpriteDrawRequest& a, const SpriteDrawRequest& b)
-        {
-            return a.depth < b.depth || a.texture != b.texture;
-        });
+        drawList.SortForRendering(*this);
     }
 
     auto GetSpriteTexture = [this](const SpriteDrawRequest& sprite)
@@ -282,11 +276,11 @@ RenderStats RenderContextDX11::Submit(RenderQueue& queue, const ICamera& camera)
             : m_MissingTexture.m_View.Get();
     };
 
-    for (usize spriteIdx = 0; spriteIdx < queue.sprites.size();)
+    for (usize spriteIdx = 0; spriteIdx < drawList.size();)
     {
         ZoneScopedN("Drawcall");
 
-        auto* currentTexture = GetSpriteTexture(queue.sprites[spriteIdx]);
+        auto* currentTexture = GetSpriteTexture(drawList[spriteIdx]);
         m_Context->PSSetShaderResources(0, 1, &currentTexture);
 
         D3D11_MAPPED_SUBRESOURCE spriteInstanceSubres {};
@@ -296,7 +290,7 @@ RenderStats RenderContextDX11::Submit(RenderQueue& queue, const ICamera& camera)
         usize spritesInBatch = 0;
         do
         {
-            auto& sprite = queue.sprites[spriteIdx];
+            auto& sprite = drawList[spriteIdx];
             auto* texture = GetSpriteTexture(sprite);
             if (texture != currentTexture)
             {
@@ -314,7 +308,7 @@ RenderStats RenderContextDX11::Submit(RenderQueue& queue, const ICamera& camera)
 
             ++spriteIdx;
             ++spritesInBatch;
-        } while (spritesInBatch < MAX_BATCH_SIZE && spriteIdx < queue.sprites.size());
+        } while (spritesInBatch < MAX_BATCH_SIZE && spriteIdx < drawList.size());
 
         m_Context->Unmap(m_SpriteInstanceData.Get(), 0);
 
@@ -324,6 +318,23 @@ RenderStats RenderContextDX11::Submit(RenderQueue& queue, const ICamera& camera)
 
 
     return stats;
+}
+
+void RenderContextDX11::SetUpRenderTarget()
+{
+    ZoneScoped;
+
+    D3D11_VIEWPORT viewport {};
+    viewport.TopLeftX = 0.0f;
+    viewport.TopLeftY = 0.0f;
+    viewport.Width = (float)m_Window->GetWidth();
+    viewport.Height = (float)m_Window->GetHeight();
+    viewport.MinDepth = 0.0f;
+    viewport.MaxDepth = 1.0f;
+    m_Context->RSSetViewports(1, &viewport);
+    m_Context->RSSetState(m_CommonStates->CullNone());
+
+    m_Context->OMSetRenderTargets(1, m_RTView.GetAddressOf(), nullptr);
 }
 
 void RenderContextDX11::Present()
@@ -404,6 +415,12 @@ HRESULT RenderContextDX11::LoadTextureFromMemory(const u8* data, usize size, Tex
 ImTextureID RenderContextDX11::GetImTextureID(const TextureHandle& texture)
 {
     return texture->m_View.Get();
+}
+
+usize RenderContextDX11::GetTextureSortKey(const TextureHandle& texture)
+{
+    usize uPtr = reinterpret_cast<usize>(texture.get() ? texture->m_View.Get() : 0);
+    return uPtr;
 }
 
 }

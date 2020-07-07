@@ -28,8 +28,10 @@ public:
 
     TextureHandle LoadTexture(const std::filesystem::path& absolutePath) override;
     ImTextureID GetImTextureID(const TextureHandle& texture) override;
+    usize GetTextureSortKey(const TextureHandle& texture) override;
 
-    RenderStats Submit(RenderQueue& queue, const ICamera& camera) override;
+    void Clear(glm::vec4 clearColor) override;
+    RenderStats Submit(SpriteDrawList& drawList, const ICamera& camera, bool sortBeforeRendering = true) override;
     void Present() override;
 
 protected:
@@ -48,6 +50,7 @@ private:
 
     explicit RenderContextDX11(std::shared_ptr<Window> window);
 
+    void SetUpRenderTarget();
     HRESULT LoadTextureFromMemory(const u8* data, usize size, TextureData& outData);
 
     std::shared_ptr<Window> m_Window;

@@ -44,7 +44,7 @@ class StaticTileGrid
 public:
     static std::unique_ptr<StaticTileGrid> Load(const tson::Map& map, const tson::Layer& layer, const tson::Tileset& tileset, u8 depth);
 
-    void Render(cgt::render::RenderQueue& renderQueue, const TileSet& tileset);
+    void Render(cgt::render::SpriteDrawList& drawList, const TileSet& tileset);
 
 private:
     StaticTileGrid(const tson::Map& map, const tson::Layer& layer, const tson::Tileset& tileset, u8 depth);

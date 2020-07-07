@@ -53,7 +53,7 @@ std::unique_ptr<StaticTileGrid> StaticTileGrid::Load(const tson::Map& map, const
     return newTileGrid;
 }
 
-void StaticTileGrid::Render(cgt::render::RenderQueue& renderQueue, const TileSet& tileset)
+void StaticTileGrid::Render(cgt::render::SpriteDrawList& drawList, const TileSet& tileset)
 {
     ZoneScoped;
 
@@ -70,12 +70,11 @@ void StaticTileGrid::Render(cgt::render::RenderQueue& renderQueue, const TileSet
 
         const auto uv = tileset[tileId];
 
-        cgt::render::SpriteDrawRequest sprite;
+        auto& sprite = drawList.AddSprite();
         sprite.position = glm::vec2(x, y * -1.0f);
         sprite.texture = tileset.GetTexture();
         sprite.uvMin = uv.min;
         sprite.uvMax = uv.max;
-        renderQueue.sprites.emplace_back(std::move(sprite));
     }
 }
 

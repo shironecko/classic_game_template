@@ -60,7 +60,7 @@ int GameMain()
 
     cgt::Clock clock;
     float accumulatedDelta = 0.0f;
-    cgt::render::RenderQueue renderQueue;
+    cgt::render::SpriteDrawList drawList;
     cgt::render::RenderStats renderStats {};
     SDL_Event event {};
 
@@ -75,8 +75,7 @@ int GameMain()
     {
         ZoneScopedN("Main Loop");
 
-        renderQueue.Reset();
-        renderQueue.clearColor = { 0.5f, 0.5f, 0.5f, 1.0f };
+        drawList.clear();
 
         const float dt = clock.Tick();
         {
@@ -198,14 +197,13 @@ int GameMain()
             const TowerType& towerType = mapData.towerTypes[selectedTowerTypeId];
             auto uv = (*tileset)[towerType.tileId];
 
-            cgt::render::SpriteDrawRequest sprite;
+            auto& sprite = drawList.AddSprite();
             sprite.position = glm::vec2(tilePos.x, tilePos.y);
             sprite.texture = tileset->GetTexture();
             sprite.uvMin = uv.min;
             sprite.uvMax = uv.max;
             sprite.colorTint = glm::vec4(glm::vec3(selectionColor), 0.3f);
             sprite.depth = 5;
-            renderQueue.sprites.emplace_back(std::move(sprite));
         }
 
         if (lmbWasClicked && buildable)
@@ -326,40 +324,39 @@ int GameMain()
             ImGui::End();
         }
 
-        baseMapLayer->Render(renderQueue, *tileset);
-        propsMapLayer->Render(renderQueue, *tileset);
+        baseMapLayer->Render(drawList, *tileset);
+        propsMapLayer->Render(drawList, *tileset);
 
         for (auto& enemy : interpolatedState.enemies)
         {
             auto& enemyType = mapData.enemyTypes[enemy.type];
 
-            cgt::render::SpriteDrawRequest sprite;
+            auto& sprite = drawList.AddSprite();
             sprite.rotation = cgt::math::VectorAngle(enemy.direction);
             sprite.position = enemy.position;
             sprite.texture = tileset->GetTexture();
             auto uv = (*tileset)[enemyType.tileId];
             sprite.uvMin = uv.min;
             sprite.uvMax = uv.max;
-            renderQueue.sprites.emplace_back(std::move(sprite));
         }
 
         for (auto& tower : interpolatedState.towers)
         {
             auto& towerType = mapData.towerTypes[tower.type];
 
-            cgt::render::SpriteDrawRequest sprite;
+            auto& sprite = drawList.AddSprite();
             sprite.position = tower.position;
             sprite.texture = tileset->GetTexture();
             auto uv = (*tileset)[towerType.tileId];
             sprite.uvMin = uv.min;
             sprite.uvMax = uv.max;
             sprite.depth = 3;
-            renderQueue.sprites.emplace_back(std::move(sprite));
         }
 
         mapData.enemyPath.DebugRender();
 
-        renderStats = render->Submit(renderQueue, camera);
+        render->Clear({ 0.2f, 0.2f, 0.2f, 1.0f });
+        renderStats = render->Submit(drawList, camera);
         imguiHelper->RenderUi(camera);
         render->Present();
 
