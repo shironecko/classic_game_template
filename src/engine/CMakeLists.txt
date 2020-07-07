@@ -8,7 +8,7 @@ add_library(engine
     math.cpp math.h
     api.h
     extern/tracy/TracyClient.cpp
-    extern/im3d/im3d.cpp)
+    extern/im3d/im3d.cpp map_helpers.cpp map_helpers.h)
 
 target_compile_definitions(engine
     PUBLIC

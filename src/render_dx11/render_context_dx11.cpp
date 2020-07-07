@@ -269,8 +269,8 @@ RenderStats RenderContextDX11::Submit(SpriteDrawList& drawList, const ICamera& c
 
     auto GetSpriteTexture = [this](const SpriteDrawRequest& sprite)
     {
-        return sprite.texture.get() != nullptr
-            ? sprite.texture->m_View.Get()
+        return sprite.src.texture.get() != nullptr
+            ? sprite.src.texture->m_View.Get()
             : m_MissingTexture.m_View.Get();
     };
 
@@ -298,8 +298,8 @@ RenderStats RenderContextDX11::Submit(SpriteDrawList& drawList, const ICamera& c
             auto& spriteInstance = spriteInstanceBuff[spritesInBatch];
             spriteInstance.colorTint = sprite.colorTint;
             spriteInstance.position = sprite.position;
-            spriteInstance.uvMin = sprite.uvMin;
-            spriteInstance.uvMax = sprite.uvMax;
+            spriteInstance.uvMin = sprite.src.uv.min;
+            spriteInstance.uvMax = sprite.src.uv.max;
             spriteInstance.scale = sprite.scale;
             spriteInstance.rotation = glm::radians(sprite.rotation);
 

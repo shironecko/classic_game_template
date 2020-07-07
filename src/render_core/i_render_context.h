@@ -10,8 +10,16 @@ namespace cgt::render
 
 struct RenderStats
 {
-    u32 spriteCount;
-    u32 drawcallCount;
+    void Reset() { spriteCount = 0; drawcallCount = 0; }
+
+    void operator+=(const RenderStats& other)
+    {
+        spriteCount += other.spriteCount;
+        drawcallCount += other.drawcallCount;
+    }
+
+    u32 spriteCount = 0;
+    u32 drawcallCount = 0;
 };
 
 class IRenderContext

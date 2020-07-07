@@ -1,6 +1,5 @@
 #include <examples/tower_defence/pch.h>
 
-#include <examples/tower_defence/tilemap.h>
 #include <examples/tower_defence/enemy_data.h>
 #include <examples/tower_defence/tower_data.h>
 #include <examples/tower_defence/map_data.h>
@@ -29,15 +28,9 @@ int GameMain()
     tson::Map map = mapParser.parse(cgt::AssetPath("examples/maps/tower_defense.json"));
     CGT_ASSERT_ALWAYS(map.getStatus() == tson::ParseStatus::OK);
 
-    tson::Tileset* rawTileset = map.getTileset("tower_defense");
-    CGT_ASSERT_ALWAYS(rawTileset);
-
-    cgt::render::TextureHandle tilesetTexture = render->LoadTexture(
-        cgt::AssetPath("examples/maps") / rawTileset->getImagePath());
-
-    auto tileset = TileSet::Load(*rawTileset, tilesetTexture);
-    auto baseMapLayer = StaticTileGrid::Load(map, *map.getLayer("Base"), *rawTileset, 0);
-    auto propsMapLayer = StaticTileGrid::Load(map, *map.getLayer("Props"), *rawTileset, 1);
+    auto tilesetHelper = cgt::TilesetHelper::LoadMapTilesets(map, cgt::AssetPath("examples/maps"), *render);
+    cgt::render::SpriteDrawList staticMapDrawList;
+    tilesetHelper->RenderTileLayers(map, staticMapDrawList, 0);
 
     MapData mapData;
     MapData::Load(map, mapData);
@@ -61,7 +54,7 @@ int GameMain()
     cgt::Clock clock;
     float accumulatedDelta = 0.0f;
     cgt::render::SpriteDrawList drawList;
-    cgt::render::RenderStats renderStats {};
+    cgt::render::RenderStats renderStats;
     SDL_Event event {};
 
     const float DT_SCALE_FACTORS[] = { 0.0f, 0.25f, 0.5f, 1.0f, 2.0f, 4.0f };
@@ -195,13 +188,10 @@ int GameMain()
             Im3d::PopColor();
 
             const TowerType& towerType = mapData.towerTypes[selectedTowerTypeId];
-            auto uv = (*tileset)[towerType.tileId];
 
             auto& sprite = drawList.AddSprite();
+            tilesetHelper->GetTileSpriteSrc(towerType.tileId, sprite.src);
             sprite.position = glm::vec2(tilePos.x, tilePos.y);
-            sprite.texture = tileset->GetTexture();
-            sprite.uvMin = uv.min;
-            sprite.uvMax = uv.max;
             sprite.colorTint = glm::vec4(glm::vec3(selectionColor), 0.3f);
             sprite.layer = 5;
         }
@@ -280,10 +270,11 @@ int GameMain()
             for (u32 i = 0; i <mapData.towerTypes.size(); ++i)
             {
                 TowerType& towerType = mapData.towerTypes[i];
-                auto textureId = render->GetImTextureID(tileset->GetTexture());
-                auto uv = (*tileset)[towerType.tileId];
+                cgt::render::SpriteSource spriteSrc;
+                tilesetHelper->GetTileSpriteSrc(towerType.tileId, spriteSrc);
+                auto textureId = render->GetImTextureID(spriteSrc.texture);
 
-                if (ImGui::ImageButton(textureId, { 64.0f, 64.0f }, { uv.min.x, uv.min.y }, { uv.max.x, uv.max.y }))
+                if (ImGui::ImageButton(textureId, { 64.0f, 64.0f }, { spriteSrc.uv.min.x, spriteSrc.uv.min.y }, { spriteSrc.uv.max.x, spriteSrc.uv.max.y }))
                 {
                     selectedTowerTypeId = i;
                 }
@@ -324,9 +315,6 @@ int GameMain()
             ImGui::End();
         }
 
-        baseMapLayer->Render(drawList, *tileset);
-        propsMapLayer->Render(drawList, *tileset);
-
         for (auto& enemy : interpolatedState.enemies)
         {
             auto& enemyType = mapData.enemyTypes[enemy.type];
@@ -334,10 +322,7 @@ int GameMain()
             auto& sprite = drawList.AddSprite();
             sprite.rotation = cgt::math::VectorAngle(enemy.direction);
             sprite.position = enemy.position;
-            sprite.texture = tileset->GetTexture();
-            auto uv = (*tileset)[enemyType.tileId];
-            sprite.uvMin = uv.min;
-            sprite.uvMax = uv.max;
+            tilesetHelper->GetTileSpriteSrc(enemyType.tileId, sprite.src);
         }
 
         for (auto& tower : interpolatedState.towers)
@@ -346,17 +331,16 @@ int GameMain()
 
             auto& sprite = drawList.AddSprite();
             sprite.position = tower.position;
-            sprite.texture = tileset->GetTexture();
-            auto uv = (*tileset)[towerType.tileId];
-            sprite.uvMin = uv.min;
-            sprite.uvMax = uv.max;
+            tilesetHelper->GetTileSpriteSrc(towerType.tileId, sprite.src);
             sprite.layer = 3;
         }
 
         mapData.enemyPath.DebugRender();
 
+        renderStats.Reset();
         render->Clear({ 0.2f, 0.2f, 0.2f, 1.0f });
-        renderStats = render->Submit(drawList, camera);
+        renderStats += render->Submit(staticMapDrawList, camera, false);
+        renderStats += render->Submit(drawList, camera);
         imguiHelper->RenderUi(camera);
         render->Present();
 

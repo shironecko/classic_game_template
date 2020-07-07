@@ -1,5 +1,7 @@
 #pragma once
 
+#include <engine/math.h>
+
 namespace cgt::render
 {
 
@@ -10,14 +12,18 @@ class TextureData;
 
 typedef std::shared_ptr<TextureData> TextureHandle;
 
+struct SpriteSource
+{
+    TextureHandle texture;
+    cgt::math::AABB uv = { glm::vec2(0.0f), glm::vec2(1.0f) };
+};
+
 struct SpriteDrawRequest
 {
+    SpriteSource src;
     glm::vec4 colorTint = glm::vec4(1.0f);
     glm::vec2 position = glm::vec2(0.0f);
-    glm::vec2 uvMin = glm::vec2(0.0f);
-    glm::vec2 uvMax = glm::vec2(1.0f);
     glm::vec2 scale = glm::vec2(1.0f);
-    TextureHandle texture;
     float rotation = 0.0f;
     u8 layer = 0;
 };

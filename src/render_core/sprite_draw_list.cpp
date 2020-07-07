@@ -12,8 +12,8 @@ void SpriteDrawList::SortForRendering(IRenderContext& render)
 
     std::sort(m_Sprites.begin(), m_Sprites.end(), [&render](const SpriteDrawRequest& a, const SpriteDrawRequest& b)
     {
-        usize aKey = render.GetTextureSortKey(a.texture);
-        usize bKey = render.GetTextureSortKey(b.texture);
+        usize aKey = render.GetTextureSortKey(a.src.texture);
+        usize bKey = render.GetTextureSortKey(b.src.texture);
         return a.layer < b.layer || aKey < bKey;
     });
 }

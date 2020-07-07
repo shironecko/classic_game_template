@@ -52,8 +52,7 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
 
         const glm::vec2 closestPathPoint = cgt::math::AABBClosestPoint(
             enemy.position,
-            glm::min(a, b),
-            glm::max(a, b));
+            cgt::math::AABB::FromPoints(a, b));
 
         glm::vec2 pathReadjust(0.0f);
         glm::vec2 toClosestPathPoint = closestPathPoint - enemy.position;
