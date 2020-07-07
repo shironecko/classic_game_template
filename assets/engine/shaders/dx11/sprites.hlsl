@@ -19,7 +19,6 @@ struct VSInput
     float2 uvMax : TEXCOORD_MAX;
     float2 scale : SCALE;
     float rotation : ROTATION;
-    float depth : DEPTH;
 };
 
 struct PSInput

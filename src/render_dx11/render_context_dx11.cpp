@@ -20,7 +20,6 @@ struct SpriteInstanceData
     glm::vec2 uvMax;
     glm::vec2 scale;
     float rotation;
-    float depth;
 };
 
 std::shared_ptr<IRenderContext> IRenderContext::BuildWithConfig(RenderConfig config)
@@ -137,7 +136,6 @@ std::shared_ptr<RenderContextDX11> RenderContextDX11::BuildWithConfig(RenderConf
             { "TEXCOORD_MAX", 0, DXGI_FORMAT_R32G32_FLOAT, 2, offsetof(SpriteInstanceData, uvMax), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
             { "SCALE", 0, DXGI_FORMAT_R32G32_FLOAT, 2, offsetof(SpriteInstanceData, scale), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
             { "ROTATION", 0, DXGI_FORMAT_R32_FLOAT, 2, offsetof(SpriteInstanceData, rotation), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-            { "DEPTH", 0, DXGI_FORMAT_R32_FLOAT, 2, offsetof(SpriteInstanceData, depth), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
         };
 
     hresult = context->m_Device->CreateInputLayout(
@@ -304,7 +302,6 @@ RenderStats RenderContextDX11::Submit(SpriteDrawList& drawList, const ICamera& c
             spriteInstance.uvMax = sprite.uvMax;
             spriteInstance.scale = sprite.scale;
             spriteInstance.rotation = glm::radians(sprite.rotation);
-            spriteInstance.depth = (float)sprite.depth / 255.0f;
 
             ++spriteIdx;
             ++spritesInBatch;
