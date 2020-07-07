@@ -41,7 +41,7 @@ PSInput VSMain(VSInput vin)
         angleSin * pos.x + angleCos * pos.y);
     pos += vin.position;
 
-    vout.pos = mul(viewProjection, float4(pos, vin.depth, 1.0f));
+    vout.pos = mul(viewProjection, float4(pos, 0.0f, 1.0f));
 
     float2 uvScale = float2(vin.uvMax.x - vin.uvMin.x, vin.uvMax.y - vin.uvMin.y);
     float2 uvTranslation = float2(0.5f, 0.5f) * uvScale + vin.uvMin;
