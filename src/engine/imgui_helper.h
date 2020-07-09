@@ -25,6 +25,9 @@ public:
     void NewFrame(float dt, const render::ICamera& camera);
     void RenderUi(const render::ICamera& camera);
 
+    void BeginInvisibleFullscreenWindow();
+    void EndInvisibleFullscreenWindow();
+
 private:
     ImGuiHelper(std::shared_ptr<Window> window, std::shared_ptr<render::IRenderContext> render);
 

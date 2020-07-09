@@ -42,16 +42,7 @@ void ImGuiHelper::RenderIm3dText(const render::ICamera& camera)
     const u32 viewportWidth = m_Window->GetWidth();
     const u32 viewportHeight = m_Window->GetHeight();
 
-    // Invisible ImGui window which covers the screen.
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32_BLACK_TRANS);
-    ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-    ImGui::SetNextWindowSize(ImVec2((float)viewportWidth, (float)viewportHeight));
-    ImGui::Begin(
-        "Invisible",
-        nullptr,
-        0 | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar |
-        ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |
-        ImGuiWindowFlags_NoBringToFrontOnFocus);
+    BeginInvisibleFullscreenWindow();
 
     ImDrawList* imDrawList = ImGui::GetWindowDrawList();
     const glm::mat4 viewProj = camera.GetViewProjection();
@@ -129,8 +120,7 @@ void ImGuiHelper::RenderIm3dText(const render::ICamera& camera)
         }
     }
 
-    ImGui::End();
-    ImGui::PopStyleColor(1);
+    EndInvisibleFullscreenWindow();
 }
 
 ImGuiHelper::~ImGuiHelper()
@@ -211,4 +201,27 @@ void ImGuiHelper::RenderUi(const render::ICamera& camera)
     ImGui::Render();
     m_Render->ImGuiBindingsRender(ImGui::GetDrawData());
 }
+
+void ImGuiHelper::BeginInvisibleFullscreenWindow()
+{
+    const u32 viewportWidth = m_Window->GetWidth();
+    const u32 viewportHeight = m_Window->GetHeight();
+
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32_BLACK_TRANS);
+    ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+    ImGui::SetNextWindowSize(ImVec2((float)viewportWidth, (float)viewportHeight));
+    ImGui::Begin(
+        "Invisible",
+        nullptr,
+        0 | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar |
+        ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |
+        ImGuiWindowFlags_NoBringToFrontOnFocus);
+}
+
+void ImGuiHelper::EndInvisibleFullscreenWindow()
+{
+    ImGui::End();
+    ImGui::PopStyleColor(1);
+}
+
 }
