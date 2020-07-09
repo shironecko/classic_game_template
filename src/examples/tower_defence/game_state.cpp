@@ -12,6 +12,8 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
     next.enemies.reserve(initial.enemies.size());
     next.towers.clear();
     next.towers.reserve(initial.towers.size());
+    next.projectiles.clear();
+    next.projectiles.reserve(initial.projectiles.size());
 
     next.playerState = initial.playerState;
     next.randomEngine = initial.randomEngine;
@@ -119,11 +121,59 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
     }
 
     // towers update
+    static std::vector<u32> enemyQueryStorage;
     for (const Tower& tower : initial.towers)
     {
         // TODO: actual update
         Tower& towerNext = next.towers.emplace_back();
         towerNext = tower;
+
+        const TowerType& type = mapData.towerTypes[tower.type];
+        enemyQueryStorage.clear();
+        QueryEnemiesInRadius(next.enemies, towerNext.position, type.range, enemyQueryStorage);
+        if (enemyQueryStorage.empty())
+        {
+            continue;
+        }
+
+        // TODO: target closest to the goal enemy
+        const u32 targetEnemyIdx = *enemyQueryStorage.begin();
+        towerNext.timeSinceLastShot += delta;
+        const float shotInterval = 1.0f / type.shotsPerSecond;
+        while (towerNext.timeSinceLastShot > shotInterval)
+        {
+            towerNext.timeSinceLastShot -= shotInterval;
+            Projectile& newProjectile = next.projectiles.emplace_back();
+            newProjectile.parentTowerTypeId = tower.type;
+            newProjectile.position = tower.position;
+            newProjectile.targetEnemyId = targetEnemyIdx;
+
+            // TODO: advance projectiles
+        }
+    }
+
+    // projectiles update
+    for (u32 i = 0; i < initial.projectiles.size(); ++i)
+    {
+        const Projectile& proj = initial.projectiles[i];
+        Projectile projNext = proj;
+        Enemy& target = next.enemies[projNext.targetEnemyId];
+        glm::vec2 toTarget = target.position - projNext.position;
+        float toTargetDstSqr = glm::dot(toTarget, toTarget);
+
+        const TowerType& parentTowerType = mapData.towerTypes[projNext.parentTowerTypeId];
+        float stepDst = parentTowerType.projectileSpeed * delta;
+
+        if (toTargetDstSqr > stepDst * stepDst)
+        {
+            glm::vec2 stepVec = toTarget / glm::sqrt(toTargetDstSqr) * parentTowerType.projectileSpeed * delta;
+            projNext.position += stepVec;
+            next.projectiles.emplace_back(projNext);
+        }
+        else
+        {
+            target.remainingHealth = glm::max(0.0f, target.remainingHealth - parentTowerType.damage);
+        }
     }
 
     // game commands execution
@@ -186,6 +236,7 @@ void GameState::Interpolate(const GameState& prevState, const GameState& nextSta
         Enemy& result = outState.enemies[i];
         result.position = glm::lerp(a.position, b.position, factor);
         result.direction = glm::lerp(a.direction, b.direction, factor);
+        result.remainingHealth = glm::lerp(a.remainingHealth, b.remainingHealth, factor);
     }
 }
 

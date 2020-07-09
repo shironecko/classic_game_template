@@ -323,6 +323,41 @@ int GameMain()
             sprite.rotation = cgt::math::VectorAngle(enemy.direction);
             sprite.position = enemy.position;
             tilesetHelper->GetTileSpriteSrc(enemyType.tileId, sprite.src);
+
+            if (cgt::math::AreNearlyEqUlps(enemy.remainingHealth, enemyType.maxHealth))
+            {
+                continue;
+            }
+
+            glm::vec2 hpOffset(-0.5f, 0.5f);
+            glm::vec2 hpDim(1.0f, 0.3f);
+            glm::vec2 hpMargin(0.01f, 0.01f);
+            glm::vec4 hpBgColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glm::vec4 hpBarColor(0.2f, 0.8f, 0.2f, 1.0f);
+
+//            Im3d::PushColor(Im3d::Color(hpBgColor));
+//            Im3d::DrawAlignedBoxFilled(
+//                glm::vec3(enemy.position - hpDim * 0.5f, 0.0f),
+//                glm::vec3(enemy.position + hpDim * 0.5f, 0.0f));
+//            Im3d::PopColor();
+//
+//            Im3d::PushColor(Im3d::Color(hpBarColor));
+//            Im3d::DrawAlignedBoxFilled(
+//                glm::vec3(enemy.position - hpDim * 0.5f + hpMargin, -0.1f),
+//                glm::vec3(enemy.position + hpDim * 0.5f - hpMargin, -0.1f));
+//            Im3d::PopColor();
+
+            glm::vec2 screenPosition = camera.WorldToScreen(enemy.position + hpOffset);
+
+            imguiHelper->BeginInvisibleFullscreenWindow();
+
+            ImGui::SetCursorPos({ screenPosition.x, screenPosition.y });
+            glm::vec2 screenSize = cgt::math::WorldToPixels(glm::vec2(1.0f, 0.2f), camera.pixelsPerUnit);
+            ImGui::ProgressBar(enemy.remainingHealth / enemyType.maxHealth, { screenSize.x, screenSize.y } , "");
+
+            imguiHelper->EndInvisibleFullscreenWindow();
+
+            //ImGui::ProgressBar()
         }
 
         for (auto& tower : interpolatedState.towers)
@@ -333,6 +368,16 @@ int GameMain()
             sprite.position = tower.position;
             tilesetHelper->GetTileSpriteSrc(towerType.tileId, sprite.src);
             sprite.layer = 3;
+        }
+
+        for (auto& proj : interpolatedState.projectiles)
+        {
+            auto& parentTowerType = mapData.towerTypes[proj.parentTowerTypeId];
+
+            auto& sprite = drawList.AddSprite();
+            sprite.position = proj.position;
+            tilesetHelper->GetTileSpriteSrc(parentTowerType.projectileTileId, sprite.src);
+            sprite.layer = 5;
         }
 
         mapData.enemyPath.DebugRender();
