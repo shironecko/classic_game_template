@@ -45,6 +45,12 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
             continue;
         }
 
+        if (cgt::math::IsNearlyZero(enemy.remainingHealth))
+        {
+            next.enemies.pop_back();
+            continue;
+        }
+
         const auto& enemyType = mapData.enemyTypes[enemy.type];
 
         const glm::vec2 a = enemyPath.waypoints[enemy.targetPointIdx - 1];
@@ -157,6 +163,11 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
     {
         const Projectile& proj = initial.projectiles[i];
         Projectile projNext = proj;
+        if (next.enemies.size() <= projNext.targetEnemyId)
+        {
+            continue;
+        }
+
         Enemy& target = next.enemies[projNext.targetEnemyId];
         glm::vec2 toTarget = target.position - projNext.position;
         float toTargetDstSqr = glm::dot(toTarget, toTarget);
@@ -227,13 +238,23 @@ void GameState::Interpolate(const GameState& prevState, const GameState& nextSta
     ZoneScoped;
 
     // TODO: more complete interpolation
-    outState = nextState;
+    outState.playerState = nextState.playerState;
+    outState.towers = nextState.towers;
+    outState.projectiles = nextState.projectiles;
+    outState.enemies.clear();
 
-    for (u32 i = 0; i < prevState.enemies.size() && i < nextState.enemies.size(); ++i)
+    for (u32 i = 0, j = 0; i < prevState.enemies.size(); ++i, ++j)
     {
         const Enemy& a = prevState.enemies[i];
-        const Enemy& b = nextState.enemies[i];
-        Enemy& result = outState.enemies[i];
+        if (cgt::math::IsNearlyZero(a.remainingHealth))
+        {
+            --j;
+            continue;
+        }
+
+        const Enemy& b = nextState.enemies[j];
+        Enemy& result = outState.enemies.emplace_back();
+        result = b;
         result.position = glm::lerp(a.position, b.position, factor);
         result.direction = glm::lerp(a.direction, b.direction, factor);
         result.remainingHealth = glm::lerp(a.remainingHealth, b.remainingHealth, factor);
