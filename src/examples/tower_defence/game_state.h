@@ -11,6 +11,7 @@ struct GameCommand
     {
         Debug_SpawnEnemy,
         Debug_DespawnAllEnemies,
+        Debug_AddGold,
 
         BuildTower,
     } type;
@@ -21,6 +22,11 @@ struct GameCommand
         {
             Enemy::TypeId enemyType;
         } debug_spawnEnemyData;
+
+        struct Debug_AddGoldData
+        {
+            float amount;
+        } debug_addGoldData;
 
         struct BuildTowerData
         {

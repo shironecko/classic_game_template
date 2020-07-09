@@ -262,6 +262,14 @@ int GameMain()
                 gameCmd.type = GameCommand::Type::Debug_DespawnAllEnemies;
             }
 
+            if (ImGui::Button("Add 100 Gold"))
+            {
+                auto& gameCmd = gameCommands.emplace_back();
+                gameCmd.type = GameCommand::Type::Debug_AddGold;
+                auto& cmdData = gameCmd.data.debug_addGoldData;
+                cmdData.amount = 100.0f;
+            }
+
             ImGui::End();
         }
 
@@ -274,10 +282,7 @@ int GameMain()
                 tilesetHelper->GetTileSpriteSrc(towerType.tileId, spriteSrc);
                 auto textureId = render->GetImTextureID(spriteSrc.texture);
 
-                if (ImGui::ImageButton(textureId, { 64.0f, 64.0f }, { spriteSrc.uv.min.x, spriteSrc.uv.min.y }, { spriteSrc.uv.max.x, spriteSrc.uv.max.y }))
-                {
-                    selectedTowerTypeId = i;
-                }
+                ImGui::ImageButton(textureId, { 64.0f, 64.0f }, { spriteSrc.uv.min.x, spriteSrc.uv.min.y }, { spriteSrc.uv.max.x, spriteSrc.uv.max.y });
 
                 if (ImGui::IsItemHovered())
                 {
@@ -310,6 +315,11 @@ int GameMain()
                     ImGui::EndTooltip();
                 }
 
+                if (ImGui::IsItemClicked())
+                {
+                    selectedTowerTypeId = i;
+                }
+
                 ImGui::SameLine();
             }
             ImGui::End();
@@ -335,18 +345,6 @@ int GameMain()
             glm::vec4 hpBgColor(0.0f, 0.0f, 0.0f, 1.0f);
             glm::vec4 hpBarColor(0.2f, 0.8f, 0.2f, 1.0f);
 
-//            Im3d::PushColor(Im3d::Color(hpBgColor));
-//            Im3d::DrawAlignedBoxFilled(
-//                glm::vec3(enemy.position - hpDim * 0.5f, 0.0f),
-//                glm::vec3(enemy.position + hpDim * 0.5f, 0.0f));
-//            Im3d::PopColor();
-//
-//            Im3d::PushColor(Im3d::Color(hpBarColor));
-//            Im3d::DrawAlignedBoxFilled(
-//                glm::vec3(enemy.position - hpDim * 0.5f + hpMargin, -0.1f),
-//                glm::vec3(enemy.position + hpDim * 0.5f - hpMargin, -0.1f));
-//            Im3d::PopColor();
-
             glm::vec2 screenPosition = camera.WorldToScreen(enemy.position + hpOffset);
 
             imguiHelper->BeginInvisibleFullscreenWindow();
@@ -356,8 +354,6 @@ int GameMain()
             ImGui::ProgressBar(enemy.remainingHealth / enemyType.maxHealth, { screenSize.x, screenSize.y } , "");
 
             imguiHelper->EndInvisibleFullscreenWindow();
-
-            //ImGui::ProgressBar()
         }
 
         for (auto& tower : interpolatedState.towers)
@@ -366,6 +362,7 @@ int GameMain()
 
             auto& sprite = drawList.AddSprite();
             sprite.position = tower.position;
+            sprite.rotation = tower.rotation;
             tilesetHelper->GetTileSpriteSrc(towerType.tileId, sprite.src);
             sprite.layer = 3;
         }
@@ -376,6 +373,7 @@ int GameMain()
 
             auto& sprite = drawList.AddSprite();
             sprite.position = proj.position;
+            sprite.rotation = proj.rotation;
             tilesetHelper->GetTileSpriteSrc(parentTowerType.projectileTileId, sprite.src);
             sprite.layer = 5;
         }

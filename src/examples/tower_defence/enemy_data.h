@@ -4,22 +4,22 @@ struct Enemy
 {
     typedef u32 TypeId;
 
-    TypeId type;
+    TypeId type = 0;
 
-    glm::vec2 position;
-    glm::vec2 direction;
-    u32 targetPointIdx;
+    glm::vec2 position = glm::vec2(0.0f);
+    glm::vec2 direction = glm::vec2(0.0f);
+    u32 targetPointIdx = 0;
 
-    float remainingHealth;
+    float remainingHealth = 0.0f;
 };
 
 struct EnemyType
 {
-    float maxHealth;
-    float speed;
-    float goldReward;
-    u32 unitsPerSpawn;
-    u32 tileId;
+    float maxHealth = 0.0f;
+    float speed = 0.0f;
+    float goldReward = 0.0f;
+    u32 unitsPerSpawn = 0;
+    u32 tileId = 0;
 
     std::string name;
 };

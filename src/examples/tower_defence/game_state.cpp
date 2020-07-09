@@ -144,6 +144,10 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
 
         // TODO: target closest to the goal enemy
         const u32 targetEnemyIdx = *enemyQueryStorage.begin();
+        const Enemy& targetEnemy = next.enemies[targetEnemyIdx];
+        const glm::vec2 toEnemy = glm::normalize(targetEnemy.position - towerNext.position);
+        towerNext.rotation = cgt::math::VectorAngle(toEnemy);
+
         towerNext.timeSinceLastShot += delta;
         const float shotInterval = 1.0f / type.shotsPerSecond;
         while (towerNext.timeSinceLastShot > shotInterval)
@@ -170,14 +174,16 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
 
         Enemy& target = next.enemies[projNext.targetEnemyId];
         glm::vec2 toTarget = target.position - projNext.position;
-        float toTargetDstSqr = glm::dot(toTarget, toTarget);
+        float toTargetDst = glm::length(toTarget);
+        glm::vec2 toTargetNorm = toTarget / toTargetDst;
+        projNext.rotation = cgt::math::VectorAngle(toTargetNorm);
 
         const TowerType& parentTowerType = mapData.towerTypes[projNext.parentTowerTypeId];
         float stepDst = parentTowerType.projectileSpeed * delta;
 
-        if (toTargetDstSqr > stepDst * stepDst)
+        if (toTargetDst > stepDst)
         {
-            glm::vec2 stepVec = toTarget / glm::sqrt(toTargetDstSqr) * parentTowerType.projectileSpeed * delta;
+            glm::vec2 stepVec = toTargetNorm * parentTowerType.projectileSpeed * delta;
             projNext.position += stepVec;
             next.projectiles.emplace_back(projNext);
         }
@@ -212,6 +218,12 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
             next.enemies.clear();
             break;
         }
+        case GameCommand::Type::Debug_AddGold:
+        {
+            auto& cmdData = command.data.debug_addGoldData;
+            next.playerState.gold += cmdData.amount;
+            break;
+        }
         case GameCommand::Type::BuildTower:
         {
             auto& cmdData = command.data.buildTowerData;
@@ -239,11 +251,11 @@ void GameState::Interpolate(const GameState& prevState, const GameState& nextSta
 
     // TODO: more complete interpolation
     outState.playerState = nextState.playerState;
-    outState.towers = nextState.towers;
+    outState.towers.clear();
     outState.projectiles = nextState.projectiles;
     outState.enemies.clear();
 
-    for (u32 i = 0, j = 0; i < prevState.enemies.size(); ++i, ++j)
+    for (u32 i = 0, j = 0; i < prevState.enemies.size() && j < nextState.enemies.size(); ++i, ++j)
     {
         const Enemy& a = prevState.enemies[i];
         if (cgt::math::IsNearlyZero(a.remainingHealth))
@@ -258,6 +270,15 @@ void GameState::Interpolate(const GameState& prevState, const GameState& nextSta
         result.position = glm::lerp(a.position, b.position, factor);
         result.direction = glm::lerp(a.direction, b.direction, factor);
         result.remainingHealth = glm::lerp(a.remainingHealth, b.remainingHealth, factor);
+    }
+
+    for (u32 i = 0; i < prevState.towers.size(); ++i)
+    {
+        const Tower& a = prevState.towers[i];
+        const Tower& b = nextState.towers[i];
+        Tower& result = outState.towers.emplace_back();
+        result = b;
+        result.rotation = glm::lerp(a.rotation, b.rotation, factor);
     }
 }
 
