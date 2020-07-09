@@ -83,4 +83,14 @@ glm::vec2 CameraSimpleOrtho::ScreenToWorld(u32 screenX, u32 screenY) const
     return world;
 }
 
+glm::vec2 CameraSimpleOrtho::WorldToScreen(glm::vec2 world) const
+{
+    const glm::mat4 vp = GetViewProjection();
+    const glm::vec2 ndc = vp * glm::vec4(world, 0.0f, 1.0f);
+    const glm::vec2 normalizedScreen = (ndc + glm::vec2(1.0f)) * glm::vec2(0.5f);
+    const glm::vec2 screen(normalizedScreen.x * windowWidth, (1.0f - normalizedScreen.y) * windowHeight);
+
+    return screen;
+}
+
 }

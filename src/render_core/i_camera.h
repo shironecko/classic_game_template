@@ -16,6 +16,7 @@ public:
     virtual glm::vec3 GetUpDirection() const = 0;
 
     virtual glm::vec2 ScreenToWorld(u32 screenX, u32 screenY) const = 0;
+    virtual glm::vec2 WorldToScreen(glm::vec2 world) const = 0;
 
     virtual bool IsOrthographic() const = 0;
 };
