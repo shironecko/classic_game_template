@@ -301,7 +301,7 @@ RenderStats RenderContextDX11::Submit(SpriteDrawList& drawList, const ICamera& c
             spriteInstance.uvMin = sprite.src.uv.min;
             spriteInstance.uvMax = sprite.src.uv.max;
             spriteInstance.scale = sprite.scale;
-            spriteInstance.rotation = glm::radians(sprite.rotation);
+            spriteInstance.rotation = glm::radians(sprite.rotation - sprite.src.baseRotation);
 
             ++spriteIdx;
             ++spritesInBatch;

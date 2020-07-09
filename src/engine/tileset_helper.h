@@ -22,7 +22,7 @@ private:
     class Tileset
     {
     public:
-        static void Load(const tson::Tileset& tileset, cgt::render::TextureHandle texture, Tileset& outTileset);
+        static void Load(tson::Map& map, const tson::Tileset& tileset, cgt::render::TextureHandle texture, Tileset& outTileset);
 
         bool GetTileSpriteSrc(u32 tileIdx, cgt::render::SpriteSource& outSrc);
 
@@ -40,6 +40,8 @@ private:
         u32 m_TileHeight;
 
         u32 m_FirstTileIdx;
+
+        std::vector<float> m_BaseTileRotations;
 
         cgt::render::TextureHandle m_Texture;
     };

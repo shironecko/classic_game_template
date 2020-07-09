@@ -6,7 +6,7 @@
 namespace cgt
 {
 
-void TilesetHelper::Tileset::Load(const tson::Tileset& tileset, cgt::render::TextureHandle texture, Tileset& outTileset)
+void TilesetHelper::Tileset::Load(tson::Map& map, const tson::Tileset& tileset, cgt::render::TextureHandle texture, Tileset& outTileset)
 {
     outTileset.m_Texture = std::move(texture);
 
@@ -23,6 +23,16 @@ void TilesetHelper::Tileset::Load(const tson::Tileset& tileset, cgt::render::Tex
     outTileset.m_TileHeight = tileset.getTileSize().y;
 
     outTileset.m_FirstTileIdx = tileset.getFirstgid();
+
+    outTileset.m_BaseTileRotations.reserve(outTileset.m_TileCount);
+    auto& tileMap = map.getTileMap();
+    for (u32 i = 0; i < outTileset.m_TileCount; ++i)
+    {
+        u32 tileId = i + outTileset.m_FirstTileIdx;
+        auto* tile = tileMap.at(tileId);
+        float baseRotation = tile->get<float>("BaseRotation");
+        outTileset.m_BaseTileRotations.emplace_back(baseRotation);
+    }
 }
 
 bool TilesetHelper::Tileset::GetTileSpriteSrc(u32 tileIdx, render::SpriteSource& outSrc)
@@ -43,6 +53,8 @@ bool TilesetHelper::Tileset::GetTileSpriteSrc(u32 tileIdx, render::SpriteSource&
         outSrc.uv.min = glm::vec2((float)tileX / m_TextureWidth, (float)tileY / m_TextureHeight);
         outSrc.uv.max = outSrc.uv.min + uvTileDimensions;
 
+        outSrc.baseRotation = m_BaseTileRotations[idx];
+
         return true;
     }
 
@@ -61,7 +73,7 @@ TilesetHelper::TilesetHelper(tson::Map& map, const std::filesystem::path& baseMa
     {
         auto texturePath = baseMapAbsPath / tileset.getImagePath();
         auto texture = render.LoadTexture(texturePath);
-        Tileset::Load(tileset, std::move(texture), m_Tilesets.emplace_back());
+        Tileset::Load(map, tileset, std::move(texture), m_Tilesets.emplace_back());
     }
 }
 

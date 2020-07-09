@@ -16,6 +16,7 @@ struct SpriteSource
 {
     TextureHandle texture;
     cgt::math::AABB uv = { glm::vec2(0.0f), glm::vec2(1.0f) };
+    float baseRotation = 0.0f;
 };
 
 struct SpriteDrawRequest
