@@ -191,7 +191,10 @@ int GameMain()
             Im3d::DrawAlignedBoxFilled({ tilePos.x - 0.5f, tilePos.y - 0.5f, 0.0f }, { tilePos.x + 0.5f, tilePos.y + 0.5f, 0.0f });
             Im3d::PopColor();
 
+
             const TowerType& towerType = mapData.towerTypes[selectedTowerTypeId];
+
+            Im3d::DrawCircle(glm::vec3(tilePos, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), towerType.range);
 
             auto& sprite = drawList.AddSprite();
             tilesetHelper->GetTileSpriteSrc(towerType.tileId, sprite.src);
