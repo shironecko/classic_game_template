@@ -43,14 +43,14 @@ int GameMain()
     GameState gameStates[2];
     GameState* prevState = &gameStates[0];
     GameState* nextState = &gameStates[1];
+    GameEventQueue gameEvents;
 
     prevState->playerState.gold = 100;
     prevState->playerState.lives = 20;
     // warm-up
-    GameState::TimeStep(mapData, *prevState, *nextState, gameCommands, FIXED_DELTA);
+    GameState::TimeStep(mapData, *prevState, *nextState, gameCommands, gameEvents, FIXED_DELTA);
 
     GameState interpolatedState;
-
 
     cgt::Clock clock;
     float accumulatedDelta = 0.0f;
@@ -85,8 +85,11 @@ int GameMain()
         {
             accumulatedDelta -= FIXED_DELTA;
             std::swap(prevState, nextState);
-            GameState::TimeStep(mapData, *prevState, *nextState, gameCommands, FIXED_DELTA);
+            GameState::TimeStep(mapData, *prevState, *nextState, gameCommands, gameEvents, FIXED_DELTA);
             gameCommands.clear();
+
+            // FIXME: actually make use of events
+            gameEvents.clear();
         }
 
         const float interpolationFactor = glm::smoothstep(0.0f, FIXED_DELTA, accumulatedDelta);

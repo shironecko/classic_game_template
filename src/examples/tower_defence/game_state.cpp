@@ -3,7 +3,7 @@
 #include <examples/tower_defence/game_state.h>
 #include <examples/tower_defence/entity_types.h>
 
-void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameState& next, const GameCommandQueue& commands, float delta)
+void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameState& next, const GameCommandQueue& commands, GameEventQueue& outGameEvents, float delta)
 {
     ZoneScoped;
 
@@ -162,6 +162,12 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
             newProjectile.targetEnemyId = targetEnemyIdx;
             newProjectile.rotation = towerNext.rotation;
 
+            auto& event = outGameEvents.emplace_back();
+            event.type = GameEvent::Type::ProjectileLaunched;
+            auto& eventData = event.data.projectileLaunchedData;
+            eventData.typeIdx = newProjectile.typeIdx;
+            eventData.position = newProjectile.position;
+
             // TODO: advance projectiles
         }
     }
@@ -193,7 +199,23 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
         }
         else
         {
+            const bool enemyDied = target.remainingHealth <= projectileType.damage;
             target.remainingHealth = glm::max(0.0f, target.remainingHealth - projectileType.damage);
+
+            auto& event = outGameEvents.emplace_back();
+            event.type = GameEvent::Type::ProjectileHit;
+            auto& eventData = event.data.projectileHitData;
+            eventData.projectileTypeIdx = projNext.typeIdx;
+            eventData.position = target.position;
+            eventData.enemyId = projNext.targetEnemyId;
+
+            if (enemyDied)
+            {
+                auto& event = outGameEvents.emplace_back();
+                event.type = GameEvent::Type::EnemyDied;
+                auto& eventData = event.data.enemyDiedData;
+                eventData.enemyId = projNext.targetEnemyId;
+            }
         }
     }
 

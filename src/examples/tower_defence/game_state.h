@@ -36,6 +36,46 @@ struct GameCommand
 
 typedef std::vector<GameCommand> GameCommandQueue;
 
+struct GameEvent
+{
+    enum class Type
+    {
+        TowerBuilt,
+        ProjectileLaunched,
+        ProjectileHit,
+        EnemyDied,
+    } type;
+
+    union EventData
+    {
+        struct TowerBuiltData
+        {
+            glm::vec2 position;
+            u32 typeIdx;
+        } towerBuiltData;
+
+        struct ProjectileLaunchedData
+        {
+            glm::vec2 position;
+            u32 typeIdx;
+        } projectileLaunchedData;
+
+        struct ProjectileHitData
+        {
+            glm::vec2 position;
+            u32 enemyId;
+            u32 projectileTypeIdx;
+        } projectileHitData;
+
+        struct EnemyDiedData
+        {
+            u32 enemyId;
+        } enemyDiedData;
+    } data;
+};
+
+typedef std::vector<GameEvent> GameEventQueue;
+
 struct PlayerState
 {
     float gold;
@@ -53,7 +93,7 @@ struct GameState
 
     u32 nextObjectId = 0;
 
-    static void TimeStep(const MapData& mapData, const GameState& initialState, GameState& outNextState, const GameCommandQueue& commands, float delta);
+    static void TimeStep(const MapData& mapData, const GameState& initialState, GameState& outNextState, const GameCommandQueue& commands, GameEventQueue& outGameEvents, float delta);
     static void Interpolate(const GameState& prevState, const GameState& nextState, GameState& outState, float factor);
 
     static void QueryEnemiesInRadius(const std::vector<Enemy>& enemies, glm::vec2 position, float radius, std::vector<u32>& outResults);
