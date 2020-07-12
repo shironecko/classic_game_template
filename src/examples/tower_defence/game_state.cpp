@@ -123,6 +123,7 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
         directionDelta += pathReadjust * flockPathReadjustFactor;
 
         enemyNext.direction = glm::normalize(enemy.direction + directionDelta * flockSteeringSpeed * delta);
+        enemyNext.rotation = cgt::math::VectorAngle(enemyNext.direction);
         enemyNext.position += enemy.direction * enemyType.speed * delta;
         enemyNext.position += pushbackFromOthers * enemyType.speed * flockPushbackFactor * delta;
     }
@@ -156,7 +157,7 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
             towerNext.timeSinceLastShot -= shotInterval;
             Projectile& newProjectile = next.projectiles.emplace_back();
             newProjectile.id = next.nextObjectId++;
-            newProjectile.parentTowerTypeId = tower.typeIdx;
+            newProjectile.typeIdx = tower.typeIdx;
             newProjectile.position = tower.position;
             newProjectile.targetEnemyId = targetEnemyIdx;
 
@@ -180,7 +181,7 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
         glm::vec2 toTargetNorm = toTarget / toTargetDst;
         projNext.rotation = cgt::math::VectorAngle(toTargetNorm);
 
-        const TowerType& parentTowerType = mapData.towerTypes[projNext.parentTowerTypeId];
+        const TowerType& parentTowerType = mapData.towerTypes[projNext.typeIdx];
         float stepDst = parentTowerType.projectileSpeed * delta;
 
         if (toTargetDst > stepDst)
@@ -273,6 +274,8 @@ void GameState::Interpolate(const GameState& prevState, const GameState& nextSta
         Enemy& result = outState.enemies.emplace_back();
         result = b;
         result.position = glm::lerp(a.position, b.position, factor);
+        result.rotation = glm::lerp(a.rotation, b.rotation, factor);
+
         result.direction = glm::lerp(a.direction, b.direction, factor);
         result.remainingHealth = glm::lerp(a.remainingHealth, b.remainingHealth, factor);
     }

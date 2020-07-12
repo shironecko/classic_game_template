@@ -330,7 +330,7 @@ int GameMain()
             auto& enemyType = mapData.enemyTypes[enemy.typeIdx];
 
             auto& sprite = drawList.AddSprite();
-            sprite.rotation = cgt::math::VectorAngle(enemy.direction);
+            sprite.rotation = enemy.rotation;
             sprite.position = enemy.position;
             tilesetHelper->GetTileSpriteSrc(enemyType.tileId, sprite.src);
 
@@ -369,7 +369,7 @@ int GameMain()
 
         for (auto& proj : interpolatedState.projectiles)
         {
-            auto& parentTowerType = mapData.towerTypes[proj.parentTowerTypeId];
+            auto& parentTowerType = mapData.towerTypes[proj.typeIdx];
 
             auto& sprite = drawList.AddSprite();
             sprite.position = proj.position;

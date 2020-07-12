@@ -18,7 +18,7 @@ struct GameCommand
     {
         struct Debug_SpawnEnemyData
         {
-            Enemy::TypeId enemyType;
+            u32 enemyType;
         } debug_spawnEnemyData;
 
         struct Debug_AddGoldData
@@ -28,7 +28,7 @@ struct GameCommand
 
         struct BuildTowerData
         {
-            Tower::TypeId towerType;
+            u32 towerType;
             glm::vec2 position;
         } buildTowerData;
     } data;
