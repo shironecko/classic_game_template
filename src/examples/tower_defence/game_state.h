@@ -57,4 +57,7 @@ struct GameState
     static void Interpolate(const GameState& prevState, const GameState& nextState, GameState& outState, float factor);
 
     static void QueryEnemiesInRadius(const std::vector<Enemy>& enemies, glm::vec2 position, float radius, std::vector<u32>& outResults);
+
+    void ForEachEntity(const MapData& mapData, std::function<void(const Entity&, const EntityType&)> function) const;
+    void ForEachEnemy(const MapData& mapData, std::function<void(const Enemy&, const EnemyType&)> function) const;
 };

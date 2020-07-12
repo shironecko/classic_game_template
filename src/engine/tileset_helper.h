@@ -12,9 +12,9 @@ class TilesetHelper
 public:
     static std::unique_ptr<TilesetHelper> LoadMapTilesets(tson::Map& map, const std::filesystem::path& baseMapAbsPath, cgt::render::IRenderContext& render);
 
-    bool GetTileSpriteSrc(u32 tileIdx, cgt::render::SpriteSource& outSrc);
-    void RenderTileLayers(tson::Map& map, cgt::render::SpriteDrawList& outDrawList, u8 baseSpriteLayer);
-    void RenderTileLayer(tson::Layer& layer, cgt::render::SpriteDrawList& outDrawList, u8 spriteLayer);
+    bool GetTileSpriteSrc(u32 tileIdx, cgt::render::SpriteSource& outSrc) const;
+    void RenderTileLayers(tson::Map& map, cgt::render::SpriteDrawList& outDrawList, u8 baseSpriteLayer) const;
+    void RenderTileLayer(tson::Layer& layer, cgt::render::SpriteDrawList& outDrawList, u8 spriteLayer) const;
 
 private:
     TilesetHelper(tson::Map& map, const std::filesystem::path& baseMapAbsPath, cgt::render::IRenderContext& render);
@@ -24,7 +24,7 @@ private:
     public:
         static void Load(tson::Map& map, const tson::Tileset& tileset, cgt::render::TextureHandle texture, Tileset& outTileset);
 
-        bool GetTileSpriteSrc(u32 tileIdx, cgt::render::SpriteSource& outSrc);
+        bool GetTileSpriteSrc(u32 tileIdx, cgt::render::SpriteSource& outSrc) const;
 
     private:
         u32 m_TextureWidth;

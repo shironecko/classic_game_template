@@ -329,3 +329,33 @@ void GameState::QueryEnemiesInRadius(const std::vector<Enemy>& enemies, glm::vec
         }
     }
 }
+
+void GameState::ForEachEntity(const MapData& mapData, std::function<void(const Entity&, const EntityType&)> function) const
+{
+    for (const auto& enemy : enemies)
+    {
+        const auto& type = mapData.enemyTypes[enemy.typeIdx];
+        function(enemy, type);
+    }
+
+    for (const auto& tower : towers)
+    {
+        const auto& type = mapData.towerTypes[tower.typeIdx];
+        function(tower, type);
+    }
+
+    for (const auto& projectile : projectiles)
+    {
+        const auto& type = mapData.projectileTypes[projectile.typeIdx];
+        function(projectile, type);
+    }
+}
+
+void GameState::ForEachEnemy(const MapData& mapData, std::function<void(const Enemy&, const EnemyType&)> function) const
+{
+    for (const auto& enemy : enemies)
+    {
+        const auto& type = mapData.enemyTypes[enemy.typeIdx];
+        function(enemy, type);
+    }
+}

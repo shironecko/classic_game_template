@@ -4,6 +4,7 @@
 #include <examples/tower_defence/entities.h>
 #include <examples/tower_defence/map_data.h>
 #include <examples/tower_defence/game_state.h>
+#include <examples/tower_defence/helper_functions.h>
 
 int GameMain()
 {
@@ -326,65 +327,38 @@ int GameMain()
             ImGui::End();
         }
 
-        for (auto& enemy : interpolatedState.enemies)
-        {
-            auto& enemyType = mapData.enemyTypes[enemy.typeIdx];
+        interpolatedState.ForEachEntity(mapData, [&](auto& entity, auto& type) {
+            RenderEntity(entity, type, *tilesetHelper, drawList);
+        });
 
-            auto& sprite = drawList.AddSprite();
-            sprite.rotation = enemy.rotation;
-            sprite.position = enemy.position;
-            tilesetHelper->GetTileSpriteSrc(enemyType.tileId, sprite.src);
+        interpolatedState.ForEachEnemy(mapData, [&](auto& enemy, auto& type) {
+            auto& enemyType = mapData.enemyTypes[enemy.typeIdx];
 
             if (cgt::math::AreNearlyEqUlps(enemy.remainingHealth, enemyType.maxHealth))
             {
-                continue;
+                return;
             }
 
             glm::vec2 hpOffset(-0.5f, 0.5f);
-            glm::vec2 hpDim(1.0f, 0.3f);
-            glm::vec2 hpMargin(0.01f, 0.01f);
-            glm::vec4 hpBgColor(0.0f, 0.0f, 0.0f, 1.0f);
-            glm::vec4 hpBarColor(0.2f, 0.8f, 0.2f, 1.0f);
+            glm::vec2 hpDim(1.0f, 0.2f);
 
             glm::vec2 screenPosition = camera.WorldToScreen(enemy.position + hpOffset);
 
             imguiHelper->BeginInvisibleFullscreenWindow();
 
             ImGui::SetCursorPos({ screenPosition.x, screenPosition.y });
-            glm::vec2 screenSize = cgt::math::WorldToPixels(glm::vec2(1.0f, 0.2f), camera.pixelsPerUnit);
+            glm::vec2 screenSize = cgt::math::WorldToPixels(hpDim, camera.pixelsPerUnit);
             ImGui::ProgressBar(enemy.remainingHealth / enemyType.maxHealth, { screenSize.x, screenSize.y } , "");
 
             imguiHelper->EndInvisibleFullscreenWindow();
-        }
-
-        for (auto& tower : interpolatedState.towers)
-        {
-            auto& towerType = mapData.towerTypes[tower.typeIdx];
-
-            auto& sprite = drawList.AddSprite();
-            sprite.position = tower.position;
-            sprite.rotation = tower.rotation;
-            tilesetHelper->GetTileSpriteSrc(towerType.tileId, sprite.src);
-            sprite.layer = 3;
-        }
-
-        for (auto& proj : interpolatedState.projectiles)
-        {
-            auto& projectileType = mapData.projectileTypes[proj.typeIdx];
-
-            auto& sprite = drawList.AddSprite();
-            sprite.position = proj.position;
-            sprite.rotation = proj.rotation;
-            tilesetHelper->GetTileSpriteSrc(projectileType.tileId, sprite.src);
-            sprite.layer = 5;
-        }
+        });
 
         mapData.enemyPath.DebugRender();
 
         renderStats.Reset();
         render->Clear({ 0.2f, 0.2f, 0.2f, 1.0f });
         renderStats += render->Submit(staticMapDrawList, camera, false);
-        renderStats += render->Submit(drawList, camera);
+        renderStats += render->Submit(drawList, camera, false);
         imguiHelper->RenderUi(camera);
         render->Present();
 

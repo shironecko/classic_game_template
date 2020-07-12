@@ -35,7 +35,7 @@ void TilesetHelper::Tileset::Load(tson::Map& map, const tson::Tileset& tileset, 
     }
 }
 
-bool TilesetHelper::Tileset::GetTileSpriteSrc(u32 tileIdx, render::SpriteSource& outSrc)
+bool TilesetHelper::Tileset::GetTileSpriteSrc(u32 tileIdx, render::SpriteSource& outSrc) const
 {
     if (tileIdx >= m_FirstTileIdx && tileIdx < m_FirstTileIdx + m_TileCount)
     {
@@ -77,10 +77,10 @@ TilesetHelper::TilesetHelper(tson::Map& map, const std::filesystem::path& baseMa
     }
 }
 
-bool TilesetHelper::GetTileSpriteSrc(u32 tileIdx, render::SpriteSource& outSrc)
+bool TilesetHelper::GetTileSpriteSrc(u32 tileIdx, render::SpriteSource& outSrc) const
 {
     bool tileFound = false;
-    for (Tileset& ts : m_Tilesets)
+    for (const Tileset& ts : m_Tilesets)
     {
         if (ts.GetTileSpriteSrc(tileIdx, outSrc))
         {
@@ -93,7 +93,7 @@ bool TilesetHelper::GetTileSpriteSrc(u32 tileIdx, render::SpriteSource& outSrc)
     return tileFound;
 }
 
-void TilesetHelper::RenderTileLayers(tson::Map& map, cgt::render::SpriteDrawList& outDrawList, u8 baseSpriteLayer)
+void TilesetHelper::RenderTileLayers(tson::Map& map, cgt::render::SpriteDrawList& outDrawList, u8 baseSpriteLayer) const
 {
     u8 spriteLayer = baseSpriteLayer;
     for (auto& mapLayer : map.getLayers())
@@ -108,7 +108,7 @@ void TilesetHelper::RenderTileLayers(tson::Map& map, cgt::render::SpriteDrawList
     }
 }
 
-void TilesetHelper::RenderTileLayer(tson::Layer& layer, cgt::render::SpriteDrawList& outDrawList, u8 spriteLayer)
+void TilesetHelper::RenderTileLayer(tson::Layer& layer, cgt::render::SpriteDrawList& outDrawList, u8 spriteLayer) const
 {
     CGT_ASSERT(layer.getType() == tson::LayerType::TileLayer);
 
