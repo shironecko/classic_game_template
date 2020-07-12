@@ -1,7 +1,6 @@
 #pragma once
 
-#include <examples/tower_defence/enemy_data.h>
-#include <examples/tower_defence/tower_data.h>
+#include <examples/tower_defence/entity_types.h>
 
 struct EnemyPath
 {

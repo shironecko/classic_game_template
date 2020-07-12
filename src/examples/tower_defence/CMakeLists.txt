@@ -1,10 +1,10 @@
 add_executable(tower_defence
     main.cpp
+    entity_types.cpp entity_types.h
+    entities.cpp entities.h
     game_state.cpp game_state.h
     map_data.cpp map_data.h
-    enemy_data.cpp enemy_data.h
-    tower_data.cpp tower_data.h
-    pch.h projectile_data.cpp projectile_data.h)
+    pch.h)
 
 target_link_libraries(tower_defence
     engine

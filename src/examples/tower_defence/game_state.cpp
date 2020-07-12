@@ -1,7 +1,7 @@
 #include <examples/tower_defence/pch.h>
 
 #include <examples/tower_defence/game_state.h>
-#include <examples/tower_defence/map_data.h>
+#include <examples/tower_defence/entity_types.h>
 
 void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameState& next, const GameCommandQueue& commands, float delta)
 {

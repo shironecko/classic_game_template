@@ -1,7 +1,7 @@
 #include <examples/tower_defence/pch.h>
 
-#include <examples/tower_defence/enemy_data.h>
-#include <examples/tower_defence/tower_data.h>
+#include <examples/tower_defence/entity_types.h>
+#include <examples/tower_defence/entities.h>
 #include <examples/tower_defence/map_data.h>
 #include <examples/tower_defence/game_state.h>
 

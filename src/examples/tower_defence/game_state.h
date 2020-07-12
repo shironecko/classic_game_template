@@ -1,8 +1,6 @@
 #pragma once
 
-#include <examples/tower_defence/enemy_data.h>
-#include <examples/tower_defence/tower_data.h>
-#include <examples/tower_defence/projectile_data.h>
+#include <examples/tower_defence/entities.h>
 #include <examples/tower_defence/map_data.h>
 
 struct GameCommand
