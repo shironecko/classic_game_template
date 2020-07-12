@@ -2,6 +2,7 @@
 
 struct Projectile
 {
+    u32 id = 0;
     glm::vec2 position = glm::vec2(0.0f);
     float rotation = 0.0f;
 

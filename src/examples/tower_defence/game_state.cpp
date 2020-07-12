@@ -17,6 +17,7 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
 
     next.playerState = initial.playerState;
     next.randomEngine = initial.randomEngine;
+    next.nextObjectId = initial.nextObjectId;
 
     // enemy movement system
     static float flockSteeringSpeed = 12.0f;
@@ -51,7 +52,7 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
             continue;
         }
 
-        const auto& enemyType = mapData.enemyTypes[enemy.type];
+        const auto& enemyType = mapData.enemyTypes[enemy.typeIdx];
 
         const glm::vec2 a = enemyPath.waypoints[enemy.targetPointIdx - 1];
         const glm::vec2 b = enemyPath.waypoints[enemy.targetPointIdx];
@@ -134,7 +135,7 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
         Tower& towerNext = next.towers.emplace_back();
         towerNext = tower;
 
-        const TowerType& type = mapData.towerTypes[tower.type];
+        const TowerType& type = mapData.towerTypes[tower.typeIdx];
         enemyQueryStorage.clear();
         QueryEnemiesInRadius(next.enemies, towerNext.position, type.range, enemyQueryStorage);
         if (enemyQueryStorage.empty())
@@ -154,7 +155,8 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
         {
             towerNext.timeSinceLastShot -= shotInterval;
             Projectile& newProjectile = next.projectiles.emplace_back();
-            newProjectile.parentTowerTypeId = tower.type;
+            newProjectile.id = next.nextObjectId++;
+            newProjectile.parentTowerTypeId = tower.typeIdx;
             newProjectile.position = tower.position;
             newProjectile.targetEnemyId = targetEnemyIdx;
 
@@ -204,6 +206,7 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
             const EnemyType& enemyType = mapData.enemyTypes[cmdData.enemyType];
 
             Enemy& enemy = next.enemies.emplace_back();
+            enemy.id = next.nextObjectId++;
             SetupEnemy(mapData.enemyTypes, cmdData.enemyType, mapData.enemyPath, enemy);
 
             std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
@@ -232,6 +235,7 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
             {
                 next.playerState.gold -= type.cost;
                 Tower& newTower = next.towers.emplace_back();
+                newTower.id = next.nextObjectId++;
                 SetupTower(mapData.towerTypes, cmdData.towerType, cmdData.position, newTower);
             }
             break;
@@ -252,19 +256,20 @@ void GameState::Interpolate(const GameState& prevState, const GameState& nextSta
     // TODO: more complete interpolation
     outState.playerState = nextState.playerState;
     outState.towers.clear();
-    outState.projectiles = nextState.projectiles;
+    outState.projectiles.clear();
     outState.enemies.clear();
 
+    // enemies
     for (u32 i = 0, j = 0; i < prevState.enemies.size() && j < nextState.enemies.size(); ++i, ++j)
     {
         const Enemy& a = prevState.enemies[i];
-        if (cgt::math::IsNearlyZero(a.remainingHealth))
+        const Enemy& b = nextState.enemies[j];
+        if (a.id != b.id)
         {
             --j;
             continue;
         }
 
-        const Enemy& b = nextState.enemies[j];
         Enemy& result = outState.enemies.emplace_back();
         result = b;
         result.position = glm::lerp(a.position, b.position, factor);
@@ -272,12 +277,36 @@ void GameState::Interpolate(const GameState& prevState, const GameState& nextSta
         result.remainingHealth = glm::lerp(a.remainingHealth, b.remainingHealth, factor);
     }
 
-    for (u32 i = 0; i < prevState.towers.size(); ++i)
+    // towers
+    for (u32 i = 0, j = 0; i < prevState.towers.size() && j < nextState.towers.size(); ++i, ++j)
     {
         const Tower& a = prevState.towers[i];
-        const Tower& b = nextState.towers[i];
+        const Tower& b = nextState.towers[j];
+        if (a.id != b.id)
+        {
+            --j;
+            continue;
+        }
+
         Tower& result = outState.towers.emplace_back();
         result = b;
+        result.rotation = glm::lerp(a.rotation, b.rotation, factor);
+    }
+
+    // projectiles
+    for (u32 i = 0, j = 0; i < prevState.projectiles.size() && j < nextState.projectiles.size(); ++i, ++j)
+    {
+        const Projectile& a = prevState.projectiles[i];
+        const Projectile& b = nextState.projectiles[j];
+        if (a.id != b.id)
+        {
+            --j;
+            continue;
+        }
+
+        Projectile& result = outState.projectiles.emplace_back();
+        result = b;
+        result.position = glm::lerp(a.position, b.position, factor);
         result.rotation = glm::lerp(a.rotation, b.rotation, factor);
     }
 }

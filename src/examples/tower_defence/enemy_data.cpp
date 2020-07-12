@@ -32,7 +32,7 @@ void SetupEnemy(const EnemyTypeCollection& enemyTypes, Enemy::TypeId typeId, con
 
     outEnemy.position = a;
     outEnemy.direction = glm::normalize(b - a);
-    outEnemy.type = typeId;
+    outEnemy.typeIdx = typeId;
     outEnemy.remainingHealth = type.maxHealth;
     outEnemy.targetPointIdx = 1;
 }

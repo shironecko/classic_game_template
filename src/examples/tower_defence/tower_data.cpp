@@ -29,5 +29,5 @@ void SetupTower(const TowerTypeCollection& towerTypes, Tower::TypeId typeId, glm
 {
     outTower.position = position;
     outTower.timeSinceLastShot = 0.0f;
-    outTower.type = typeId;
+    outTower.typeIdx = typeId;
 }

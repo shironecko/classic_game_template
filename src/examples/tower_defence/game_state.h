@@ -53,6 +53,8 @@ struct GameState
     std::vector<Tower> towers;
     std::vector<Projectile> projectiles;
 
+    u32 nextObjectId = 0;
+
     static void TimeStep(const MapData& mapData, const GameState& initialState, GameState& outNextState, const GameCommandQueue& commands, float delta);
     static void Interpolate(const GameState& prevState, const GameState& nextState, GameState& outState, float factor);
 

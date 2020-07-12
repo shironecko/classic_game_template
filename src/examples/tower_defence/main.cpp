@@ -327,7 +327,7 @@ int GameMain()
 
         for (auto& enemy : interpolatedState.enemies)
         {
-            auto& enemyType = mapData.enemyTypes[enemy.type];
+            auto& enemyType = mapData.enemyTypes[enemy.typeIdx];
 
             auto& sprite = drawList.AddSprite();
             sprite.rotation = cgt::math::VectorAngle(enemy.direction);
@@ -358,7 +358,7 @@ int GameMain()
 
         for (auto& tower : interpolatedState.towers)
         {
-            auto& towerType = mapData.towerTypes[tower.type];
+            auto& towerType = mapData.towerTypes[tower.typeIdx];
 
             auto& sprite = drawList.AddSprite();
             sprite.position = tower.position;

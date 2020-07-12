@@ -4,7 +4,8 @@ struct Tower
 {
     typedef u32 TypeId;
 
-    TypeId type = 0;
+    u32 id = 0;
+    TypeId typeIdx = 0;
     glm::vec2 position = glm::vec2(0.0f);
     float rotation = 0.0f;
     float timeSinceLastShot = 0.0f;
