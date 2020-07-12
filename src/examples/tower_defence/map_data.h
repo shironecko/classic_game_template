@@ -56,6 +56,7 @@ struct MapData
     EnemyPath enemyPath;
     EnemyTypeCollection enemyTypes;
     TowerTypeCollection towerTypes;
+    ProjectileTypeCollection projectileTypes;
     BuildableMap buildableMap;
 
     static void Load(tson::Map& map, MapData& outMapData);

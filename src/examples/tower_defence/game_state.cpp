@@ -157,9 +157,10 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
             towerNext.timeSinceLastShot -= shotInterval;
             Projectile& newProjectile = next.projectiles.emplace_back();
             newProjectile.id = next.nextObjectId++;
-            newProjectile.typeIdx = tower.typeIdx;
+            newProjectile.typeIdx = type.projectileTypeIdx;
             newProjectile.position = tower.position;
             newProjectile.targetEnemyId = targetEnemyIdx;
+            newProjectile.rotation = towerNext.rotation;
 
             // TODO: advance projectiles
         }
@@ -181,18 +182,18 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
         glm::vec2 toTargetNorm = toTarget / toTargetDst;
         projNext.rotation = cgt::math::VectorAngle(toTargetNorm);
 
-        const TowerType& parentTowerType = mapData.towerTypes[projNext.typeIdx];
-        float stepDst = parentTowerType.projectileSpeed * delta;
+        const ProjectileType& projectileType = mapData.projectileTypes[projNext.typeIdx];
+        float stepDst = projectileType.speed * delta;
 
         if (toTargetDst > stepDst)
         {
-            glm::vec2 stepVec = toTargetNorm * parentTowerType.projectileSpeed * delta;
+            glm::vec2 stepVec = toTargetNorm * projectileType.speed * delta;
             projNext.position += stepVec;
             next.projectiles.emplace_back(projNext);
         }
         else
         {
-            target.remainingHealth = glm::max(0.0f, target.remainingHealth - parentTowerType.damage);
+            target.remainingHealth = glm::max(0.0f, target.remainingHealth - projectileType.damage);
         }
     }
 

@@ -84,8 +84,7 @@ void BuildableMap::Load(tson::Map& map, BuildableMap& outMap)
 void MapData::Load(tson::Map& map, MapData& outMapData)
 {
     EnemyPath::Load(map, outMapData.enemyPath);
-    LoadEnemyTypes(map, outMapData.enemyTypes);
-    LoadTowerTypes(map, outMapData.towerTypes);
+    LoadEntityTypes(map, outMapData.enemyTypes, outMapData.towerTypes, outMapData.projectileTypes);
     BuildableMap::Load(map, outMapData.buildableMap);
 }
 

@@ -278,6 +278,7 @@ int GameMain()
             for (u32 i = 0; i <mapData.towerTypes.size(); ++i)
             {
                 TowerType& towerType = mapData.towerTypes[i];
+                ProjectileType& projectileType = mapData.projectileTypes[towerType.projectileTypeIdx];
                 cgt::render::SpriteSource spriteSrc;
                 tilesetHelper->GetTileSpriteSrc(towerType.tileId, spriteSrc);
                 auto textureId = render->GetImTextureID(spriteSrc.texture);
@@ -299,13 +300,13 @@ int GameMain()
 
                     ImGui::Text("Damage: ");
                     ImGui::SameLine();
-                    ImGui::TextColored({ 0.8f, 0.2f, 0.2f, 1.0f }, "%.0f", towerType.damage);
+                    ImGui::TextColored({ 0.8f, 0.2f, 0.2f, 1.0f }, "%.0f", projectileType.damage);
 
-                    if (towerType.splashRadius > 0.0f)
+                    if (projectileType.splashRadius > 0.0f)
                     {
                         ImGui::Text("Splash: ");
                         ImGui::SameLine();
-                        ImGui::TextColored({ 0.8f, 0.2f, 0.2f, 1.0f }, "%.1f", towerType.splashRadius);
+                        ImGui::TextColored({ 0.8f, 0.2f, 0.2f, 1.0f }, "%.1f", projectileType.splashRadius);
                     }
 
                     ImGui::Text("Shots per second: ");
@@ -369,12 +370,12 @@ int GameMain()
 
         for (auto& proj : interpolatedState.projectiles)
         {
-            auto& parentTowerType = mapData.towerTypes[proj.typeIdx];
+            auto& projectileType = mapData.projectileTypes[proj.typeIdx];
 
             auto& sprite = drawList.AddSprite();
             sprite.position = proj.position;
             sprite.rotation = proj.rotation;
-            tilesetHelper->GetTileSpriteSrc(parentTowerType.projectileTileId, sprite.src);
+            tilesetHelper->GetTileSpriteSrc(projectileType.tileId, sprite.src);
             sprite.layer = 5;
         }
 
