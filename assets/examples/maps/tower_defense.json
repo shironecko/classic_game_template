@@ -153,17 +153,17 @@
                         {
                          "name":"GoldReward",
                          "type":"float",
-                         "value":5
+                         "value":2
                         }, 
                         {
                          "name":"Health",
                          "type":"float",
-                         "value":100
+                         "value":50
                         }, 
                         {
                          "name":"Speed",
                          "type":"float",
-                         "value":5
+                         "value":2.5
                         }, 
                         {
                          "name":"UnitsPerSpawn",
@@ -191,17 +191,17 @@
                         {
                          "name":"GoldReward",
                          "type":"float",
-                         "value":2.5
+                         "value":1
                         }, 
                         {
                          "name":"Health",
                          "type":"float",
-                         "value":50
+                         "value":25
                         }, 
                         {
                          "name":"Speed",
                          "type":"float",
-                         "value":8
+                         "value":4
                         }, 
                         {
                          "name":"UnitsPerSpawn",
@@ -229,17 +229,17 @@
                         {
                          "name":"GoldReward",
                          "type":"float",
-                         "value":10
+                         "value":4
                         }, 
                         {
                          "name":"Health",
                          "type":"float",
-                         "value":200
+                         "value":100
                         }, 
                         {
                          "name":"Speed",
                          "type":"float",
-                         "value":4
+                         "value":1.5
                         }, 
                         {
                          "name":"UnitsPerSpawn",
@@ -273,12 +273,12 @@
                         {
                          "name":"Cost",
                          "type":"float",
-                         "value":80
+                         "value":75
                         }, 
                         {
                          "name":"Damage",
                          "type":"float",
-                         "value":40
+                         "value":100
                         }, 
                         {
                          "name":"HitTile",
@@ -288,22 +288,22 @@
                         {
                          "name":"ProjectileSpeed",
                          "type":"float",
-                         "value":25
+                         "value":30
                         }, 
                         {
                          "name":"ProjectileTile",
                          "type":"int",
-                         "value":297
+                         "value":298
                         }, 
                         {
                          "name":"Range",
                          "type":"float",
-                         "value":12
+                         "value":10
                         }, 
                         {
                          "name":"ShotsPerSecond",
                          "type":"float",
-                         "value":0.5
+                         "value":0.75
                         }, 
                         {
                          "name":"SplashRadius",
@@ -326,7 +326,7 @@
                         {
                          "name":"Cost",
                          "type":"float",
-                         "value":50
+                         "value":40
                         }, 
                         {
                          "name":"Damage",
@@ -346,7 +346,7 @@
                         {
                          "name":"ProjectileTile",
                          "type":"int",
-                         "value":275
+                         "value":276
                         }, 
                         {
                          "name":"Range",
@@ -356,7 +356,7 @@
                         {
                          "name":"ShotsPerSecond",
                          "type":"float",
-                         "value":2
+                         "value":6
                         }, 
                         {
                          "name":"SplashRadius",
@@ -384,7 +384,7 @@
                         {
                          "name":"Damage",
                          "type":"float",
-                         "value":30
+                         "value":50
                         }, 
                         {
                          "name":"HitTile",
@@ -409,7 +409,7 @@
                         {
                          "name":"ShotsPerSecond",
                          "type":"float",
-                         "value":0.3
+                         "value":0.5
                         }, 
                         {
                          "name":"SplashRadius",

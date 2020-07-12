@@ -132,7 +132,6 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
     static std::vector<u32> enemyQueryStorage;
     for (const Tower& tower : initial.towers)
     {
-        // TODO: actual update
         Tower& towerNext = next.towers.emplace_back();
         towerNext = tower;
 
@@ -211,6 +210,9 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
 
             if (enemyDied)
             {
+                const EnemyType& enemyType = mapData.enemyTypes[target.typeIdx];
+                next.playerState.gold += enemyType.goldReward;
+
                 auto& event = outGameEvents.emplace_back();
                 event.type = GameEvent::Type::EnemyDied;
                 auto& eventData = event.data.enemyDiedData;
