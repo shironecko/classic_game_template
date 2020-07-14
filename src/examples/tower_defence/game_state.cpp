@@ -29,7 +29,7 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
 
     const float flockDesiredSpacing = 0.7f;
     const float flockMinimumSpacing = 0.4;
-    const float flockPushbackFactor = 5.0f;
+    const float flockPushbackFactor = 1.0f;
 
     const float flockCenteringFactor = 0.2f;
 
@@ -121,7 +121,6 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
 
         enemyNext.velocity += targetDirection * flockWaypointSteeringFactor * acceleration * delta;
         enemyNext.velocity += recenteringDirection * flockCenteringFactor * acceleration * delta;
-        enemyNext.velocity += pushbackDirection * flockPushbackFactor * acceleration * delta;
         enemyNext.velocity += roadRecenteringDirection * flockRoadRecenteringFactor * acceleration * delta;
 
         const float velocityLength = glm::length(enemyNext.velocity);
@@ -131,10 +130,7 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
             enemyNext.velocity = velocityNormalized * enemyType.speed;
         }
 
-        const float pushbackSlowdownForce = glm::smoothstep(0.0f, 3.0f, (float)othersInFrontThatAreTooClose);
-        const float maxPushbackSlowdownFactor = 0.2f;
-        const float velocityMultiplier = 1.0f - maxPushbackSlowdownFactor * pushbackSlowdownForce;
-        enemyNext.velocity *= velocityMultiplier;
+        enemyNext.velocity += pushbackDirection * flockPushbackFactor * acceleration * delta;
 
         enemyNext.rotation = cgt::math::VectorAngle(velocityNormalized);
         enemyNext.position += enemyNext.velocity * delta;
