@@ -128,6 +128,16 @@ inline float VectorAngle(glm::vec2 vector)
     return degreesWrapped;
 }
 
+inline glm::vec2 AngleVector(float degrees)
+{
+    const float radians = glm::radians(degrees);
+    const glm::vec2 vector(
+        glm::cos(radians),
+        glm::sin(radians));
+
+    return vector;
+}
+
 inline float LengthSqr(glm::vec2 vector)
 {
     float lengthSqr = glm::dot(vector, vector);

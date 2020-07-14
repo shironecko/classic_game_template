@@ -324,11 +324,11 @@ void GameState::Interpolate(const GameState& prevState, const GameState& nextSta
         result = b;
         result.position = glm::lerp(a.position, b.position, factor);
 
-        const float targetRotation = glm::abs(a.rotation - b.rotation) < 180.0f
-            ? b.rotation
-            : b.rotation - 360.0f;
-
-        result.rotation = glm::lerp(a.rotation, targetRotation, factor);
+        // interpolating vectors instead of degrees to avoid jerking when a is 1 degree and b is 359 degrees for example
+        const glm::vec2 rotationVecA = cgt::math::AngleVector(a.rotation);
+        const glm::vec2 rotationVecB = cgt::math::AngleVector(b.rotation);
+        const glm::vec2 interpolatedRotationVec = glm::lerp(rotationVecA, rotationVecB, factor);
+        result.rotation = cgt::math::VectorAngle(interpolatedRotationVec);
 
         result.remainingHealth = glm::lerp(a.remainingHealth, b.remainingHealth, factor);
     }
