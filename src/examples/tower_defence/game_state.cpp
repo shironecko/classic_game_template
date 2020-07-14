@@ -323,13 +323,7 @@ void GameState::Interpolate(const GameState& prevState, const GameState& nextSta
         Enemy& result = outState.enemies.emplace_back();
         result = b;
         result.position = glm::lerp(a.position, b.position, factor);
-
-        // interpolating vectors instead of degrees to avoid jerking when a is 1 degree and b is 359 degrees for example
-        const glm::vec2 rotationVecA = cgt::math::AngleVector(a.rotation);
-        const glm::vec2 rotationVecB = cgt::math::AngleVector(b.rotation);
-        const glm::vec2 interpolatedRotationVec = glm::lerp(rotationVecA, rotationVecB, factor);
-        result.rotation = cgt::math::VectorAngle(interpolatedRotationVec);
-
+        result.rotation = cgt::math::AngleLerp(a.rotation, b.rotation, factor);
         result.remainingHealth = glm::lerp(a.remainingHealth, b.remainingHealth, factor);
     }
 
@@ -346,7 +340,7 @@ void GameState::Interpolate(const GameState& prevState, const GameState& nextSta
 
         Tower& result = outState.towers.emplace_back();
         result = b;
-        result.rotation = glm::lerp(a.rotation, b.rotation, factor);
+        result.rotation = cgt::math::AngleLerp(a.rotation, b.rotation, factor);
     }
 
     // projectiles

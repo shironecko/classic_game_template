@@ -138,6 +138,17 @@ inline glm::vec2 AngleVector(float degrees)
     return vector;
 }
 
+inline float AngleLerp(float degreesA, float degreesB, float amount)
+{
+    // NOTE: this is by far not the most efficient way to interpolate angles but it's simple, concise and free of artifacts (?)
+    const glm::vec2 rotationVecA = cgt::math::AngleVector(degreesA);
+    const glm::vec2 rotationVecB = cgt::math::AngleVector(degreesB);
+    const glm::vec2 interpolatedRotationVec = glm::lerp(rotationVecA, rotationVecB, amount);
+    const float resultDegrees = cgt::math::VectorAngle(interpolatedRotationVec);
+
+    return resultDegrees;
+}
+
 inline float LengthSqr(glm::vec2 vector)
 {
     float lengthSqr = glm::dot(vector, vector);
