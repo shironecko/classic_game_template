@@ -343,7 +343,8 @@ int GameMain()
         interpolatedState.ForEachEnemy(mapData, [&](auto& enemy, auto& type) {
             auto& enemyType = mapData.enemyTypes[enemy.typeIdx];
 
-            if (cgt::math::AreNearlyEqUlps(enemy.remainingHealth, enemyType.maxHealth))
+            if (cgt::math::AreNearlyEqUlps(enemy.remainingHealth, enemyType.maxHealth)
+                || cgt::math::IsNearlyZero(enemy.remainingHealth))
             {
                 return;
             }

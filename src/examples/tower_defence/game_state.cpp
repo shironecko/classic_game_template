@@ -324,7 +324,7 @@ void GameState::Interpolate(const GameState& prevState, const GameState& nextSta
         result = b;
         result.position = glm::lerp(a.position, b.position, factor);
         result.rotation = cgt::math::AngleLerp(a.rotation, b.rotation, factor);
-        result.remainingHealth = glm::lerp(a.remainingHealth, b.remainingHealth, factor);
+        result.remainingHealth = b.remainingHealth;
     }
 
     // towers
