@@ -24,5 +24,7 @@ struct Tower : Entity
 
 struct Projectile : Entity
 {
+    glm::vec2 lastEnemyPosition = glm::vec2(0.0f);
+    u32 targetEnemyIndex = 0;
     u32 targetEnemyId = 0;
 };

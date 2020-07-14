@@ -151,7 +151,12 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
             continue;
         }
 
-        // TODO: target closest to the goal enemy
+        std::sort(enemyQueryStorage.begin(), enemyQueryStorage.end(), [&](u32 aIdx, u32 bIdx) {
+            const Enemy& a = next.enemies[aIdx];
+            const Enemy& b = next.enemies[bIdx];
+            return a.distanceToGoal < b.distanceToGoal;
+        });
+
         const u32 targetEnemyIdx = *enemyQueryStorage.begin();
         const Enemy& targetEnemy = next.enemies[targetEnemyIdx];
         const glm::vec2 toEnemy = glm::normalize(targetEnemy.position - towerNext.position);
@@ -166,7 +171,9 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
             newProjectile.id = next.nextObjectId++;
             newProjectile.typeIdx = type.projectileTypeIdx;
             newProjectile.position = tower.position;
-            newProjectile.targetEnemyId = targetEnemyIdx;
+            newProjectile.targetEnemyIndex = targetEnemyIdx;
+            newProjectile.targetEnemyId = targetEnemy.id;
+            newProjectile.lastEnemyPosition = targetEnemy.position;
             newProjectile.rotation = towerNext.rotation;
 
             auto& event = outGameEvents.emplace_back();
@@ -184,13 +191,21 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
     {
         const Projectile& proj = initial.projectiles[i];
         Projectile projNext = proj;
-        if (next.enemies.size() <= projNext.targetEnemyId)
+        if (next.enemies.size() <= projNext.targetEnemyIndex)
         {
             continue;
         }
 
-        Enemy& target = next.enemies[projNext.targetEnemyId];
-        glm::vec2 toTarget = target.position - projNext.position;
+        bool targetEnemyAlive =
+            next.enemies.size() > projNext.targetEnemyIndex
+            && next.enemies[projNext.targetEnemyIndex].id == projNext.targetEnemyId;
+
+        const glm::vec2 targetPosition = targetEnemyAlive
+            ? next.enemies[projNext.targetEnemyIndex].position
+            : projNext.lastEnemyPosition;
+
+        projNext.lastEnemyPosition = targetPosition;
+        glm::vec2 toTarget = targetPosition - projNext.position;
         float toTargetDst = glm::length(toTarget);
         glm::vec2 toTargetNorm = toTarget / toTargetDst;
         projNext.rotation = cgt::math::VectorAngle(toTargetNorm);
@@ -204,8 +219,9 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
             projNext.position += stepVec;
             next.projectiles.emplace_back(projNext);
         }
-        else
+        else if (targetEnemyAlive)
         {
+            Enemy& target = next.enemies[projNext.targetEnemyIndex];
             const bool enemyDied = target.remainingHealth <= projectileType.damage;
             target.remainingHealth = glm::max(0.0f, target.remainingHealth - projectileType.damage);
 
@@ -214,7 +230,7 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
             auto& eventData = event.data.projectileHitData;
             eventData.projectileTypeIdx = projNext.typeIdx;
             eventData.position = target.position;
-            eventData.enemyId = projNext.targetEnemyId;
+            eventData.enemyId = projNext.targetEnemyIndex;
 
             if (enemyDied)
             {
@@ -224,7 +240,7 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
                 auto& event = outGameEvents.emplace_back();
                 event.type = GameEvent::Type::EnemyDied;
                 auto& eventData = event.data.enemyDiedData;
-                eventData.enemyId = projNext.targetEnemyId;
+                eventData.enemyId = projNext.targetEnemyIndex;
             }
         }
     }
