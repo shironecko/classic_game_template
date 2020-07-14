@@ -94,7 +94,7 @@ struct GameState
     u32 nextObjectId = 0;
 
     static void TimeStep(const MapData& mapData, const GameState& initialState, GameState& outNextState, const GameCommandQueue& commands, GameEventQueue& outGameEvents, float delta);
-    static void Interpolate(const GameState& prevState, const GameState& nextState, GameState& outState, float factor);
+    static void Interpolate(const GameState& prevState, const GameState& nextState, GameState& outState, float amount);
 
     static void QueryEnemiesInRadius(const std::vector<Enemy>& enemies, glm::vec2 position, float radius, std::vector<u32>& outResults);
 

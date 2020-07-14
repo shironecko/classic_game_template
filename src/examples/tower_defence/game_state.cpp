@@ -318,66 +318,42 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
     }
 }
 
-void GameState::Interpolate(const GameState& prevState, const GameState& nextState, GameState& outState, float factor)
+template<class TEntity>
+void InterpolateEntities(const std::vector<TEntity>& prev, const std::vector<TEntity>& next, std::vector<TEntity>& outInterpolated, float amount, std::function<void(const TEntity&, const TEntity&, TEntity&, float)> interpolationFunction = {})
+{
+    for (u32 i = 0, j = 0; i < prev.size() && j < next.size(); ++i, ++j)
+    {
+        const TEntity& a = prev[i];
+        const TEntity& b = next[j];
+        if (a.id != b.id)
+        {
+            --j;
+            continue;
+        }
+
+        TEntity& result = outInterpolated.emplace_back();
+        result = b;
+        result.position = glm::lerp(a.position, b.position, amount);
+        result.rotation = cgt::math::AngleLerp(a.rotation, b.rotation, amount);
+        if (interpolationFunction)
+        {
+            interpolationFunction(a, b, result, amount);
+        }
+    }
+}
+
+void GameState::Interpolate(const GameState& prevState, const GameState& nextState, GameState& outState, float amount)
 {
     ZoneScoped;
 
-    // TODO: more complete interpolation
     outState.playerState = nextState.playerState;
     outState.towers.clear();
     outState.projectiles.clear();
     outState.enemies.clear();
 
-    // enemies
-    for (u32 i = 0, j = 0; i < prevState.enemies.size() && j < nextState.enemies.size(); ++i, ++j)
-    {
-        const Enemy& a = prevState.enemies[i];
-        const Enemy& b = nextState.enemies[j];
-        if (a.id != b.id)
-        {
-            --j;
-            continue;
-        }
-
-        Enemy& result = outState.enemies.emplace_back();
-        result = b;
-        result.position = glm::lerp(a.position, b.position, factor);
-        result.rotation = cgt::math::AngleLerp(a.rotation, b.rotation, factor);
-        result.remainingHealth = b.remainingHealth;
-    }
-
-    // towers
-    for (u32 i = 0, j = 0; i < prevState.towers.size() && j < nextState.towers.size(); ++i, ++j)
-    {
-        const Tower& a = prevState.towers[i];
-        const Tower& b = nextState.towers[j];
-        if (a.id != b.id)
-        {
-            --j;
-            continue;
-        }
-
-        Tower& result = outState.towers.emplace_back();
-        result = b;
-        result.rotation = cgt::math::AngleLerp(a.rotation, b.rotation, factor);
-    }
-
-    // projectiles
-    for (u32 i = 0, j = 0; i < prevState.projectiles.size() && j < nextState.projectiles.size(); ++i, ++j)
-    {
-        const Projectile& a = prevState.projectiles[i];
-        const Projectile& b = nextState.projectiles[j];
-        if (a.id != b.id)
-        {
-            --j;
-            continue;
-        }
-
-        Projectile& result = outState.projectiles.emplace_back();
-        result = b;
-        result.position = glm::lerp(a.position, b.position, factor);
-        result.rotation = glm::lerp(a.rotation, b.rotation, factor);
-    }
+    InterpolateEntities<Enemy>(prevState.enemies, nextState.enemies, outState.enemies, amount);
+    InterpolateEntities<Tower>(prevState.towers, nextState.towers, outState.towers, amount);
+    InterpolateEntities<Projectile>(prevState.projectiles, nextState.projectiles, outState.projectiles, amount);
 }
 
 void GameState::QueryEnemiesInRadius(const std::vector<Enemy>& enemies, glm::vec2 position, float radius, std::vector<u32>& outResults)
