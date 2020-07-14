@@ -14,10 +14,8 @@ void SetupEnemy(const EnemyTypeCollection& enemyTypes, u32 typeIdx, const EnemyP
     glm::vec2 b = path.waypoints[1];
 
     outEnemy.position = a;
-    outEnemy.direction = glm::normalize(b - a);
     outEnemy.typeIdx = typeIdx;
     outEnemy.remainingHealth = type.maxHealth;
-    outEnemy.targetPointIdx = 1;
 }
 
 void SetupTower(const TowerTypeCollection& towerTypes, u32 typeIdx, glm::vec2 position, Tower& outTower)

@@ -26,15 +26,17 @@ public:
 
     ~Window();
 
-    bool PollEvent(SDL_Event& outEvent);
-
     u32 GetWidth() const;
     u32 GetHeight() const;
 
     SDL_Window* GetSDLWindow() { return m_Window; }
 
 private:
+    friend class EventLoop;
+
     explicit Window(SDL_Window* window);
+
+    bool PollEvent(SDL_Event& outEvent);
 
     SDL_Window* m_Window;
 };

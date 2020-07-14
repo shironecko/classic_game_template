@@ -2,6 +2,7 @@
 
 #include <examples/tower_defence/game_state.h>
 #include <examples/tower_defence/entity_types.h>
+#include <examples/tower_defence/helper_functions.h>
 
 void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameState& next, const GameCommandQueue& commands, GameEventQueue& outGameEvents, float delta)
 {
@@ -20,20 +21,17 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
     next.nextObjectId = initial.nextObjectId;
 
     // enemy movement system
-    static float flockSteeringSpeed = 12.0f;
-    static float flockWaypointSteeringFactor = 1.0f;
-    static float flockCommonDirectionFactor = 0.2f;
+    const float flockWaypointSteeringFactor = 1.0f;
+    const float flockSightRange = 3.0f;
+    const float flockRoadRecenteringStartDistance = 0.7f;
+    const float flockRoadRecenteringMaxDistance = 1.0f;
+    const float flockRoadRecenteringFactor = 5.5f;
 
-    static float flockSightRange = 3.0f;
+    const float flockDesiredSpacing = 0.7f;
+    const float flockMinimumSpacing = 0.4;
+    const float flockPushbackFactor = 5.0f;
 
-    static float flockMaxPathDistance = 0.8f;
-    static float flockPathReadjustFactor = 0.4f;
-
-    static float flockDesiredSpacing = 0.7f;
-    static float flockMinimumSpacing = 0.4;
-    static float flockPushbackFactor = 1.0f;
-
-    static float flockCenteringFactor = 0.3f;
+    const float flockCenteringFactor = 0.2f;
 
     const auto& enemyPath = mapData.enemyPath;
     for (const Enemy& enemy : initial.enemies)
@@ -41,45 +39,36 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
         Enemy& enemyNext = next.enemies.emplace_back();
         enemyNext = enemy;
 
-        if (enemy.targetPointIdx >= enemyPath.waypoints.size())
-        {
-            continue;
-        }
-
-        if (cgt::math::IsNearlyZero(enemy.remainingHealth))
+        if (cgt::math::IsNearlyZero(enemy.remainingHealth)
+            || cgt::math::IsNearlyZero(cgt::math::DistanceSqr(enemy.position, enemyPath.waypoints.back())))
         {
             next.enemies.pop_back();
             continue;
         }
 
+        const glm::vec2 a = enemyPath.waypoints[enemy.nextWaypointIdx - 1];
+        const glm::vec2 b = enemyPath.waypoints[enemy.nextWaypointIdx];
+        const glm::vec2 targetDirection = glm::normalize(b - a);
+        const glm::vec2 inverseTargetDirection = targetDirection * -1.0f;
+
+        const glm::vec2 closestPathPoint = glm::closestPointOnLine(enemy.position, a, b);
+        const float nextWaypointDistanceFromGoal = enemyPath.distancesToGoal[enemy.nextWaypointIdx];
+        const float enemyDistanceFromGoal = nextWaypointDistanceFromGoal + glm::distance(closestPathPoint, b);
+        enemyNext.distanceToGoal = enemyDistanceFromGoal;
+
+        const float pathLookahead = 1.0f;
+        if (cgt::math::DistanceSqr(closestPathPoint, b) < pathLookahead
+            && enemy.nextWaypointIdx < enemyPath.waypoints.size() - 1)
+        {
+            ++enemyNext.nextWaypointIdx;
+        }
+
         const auto& enemyType = mapData.enemyTypes[enemy.typeIdx];
 
-        const glm::vec2 a = enemyPath.waypoints[enemy.targetPointIdx - 1];
-        const glm::vec2 b = enemyPath.waypoints[enemy.targetPointIdx];
-
-        const glm::vec2 nextWaypointDirection = glm::normalize(b - enemy.position);
-
-        const glm::vec2 closestPathPoint = cgt::math::AABBClosestPoint(
-            enemy.position,
-            cgt::math::AABB::FromPoints(a, b));
-
-        glm::vec2 pathReadjust(0.0f);
-        glm::vec2 toClosestPathPoint = closestPathPoint - enemy.position;
-        float toClosestPathPointDistSqr = glm::dot(toClosestPathPoint, toClosestPathPoint);
-        if (toClosestPathPointDistSqr > 0.0f)
-        {
-            pathReadjust = glm::normalize(closestPathPoint - enemy.position);
-        }
-
-        if (glm::distance(closestPathPoint, b) < 0.1f)
-        {
-            ++enemyNext.targetPointIdx;
-        }
-
         u32 othersInSight = 0;
+        u32 othersInFrontThatAreTooClose = 0;
         glm::vec2 othersCumulativePosition(0.0f);
-        glm::vec2 othersCumulativeDirection(0.0f);
-        glm::vec2 pushbackFromOthers(0.0f);
+        glm::vec2 pushbackDirection(0.0f);
         for (const auto& otherEnemy : initial.enemies)
         {
             if (&enemy == &otherEnemy)
@@ -88,44 +77,67 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
             }
 
             glm::vec2 fromOther = enemy.position - otherEnemy.position;
-            float fromOtherDistSqr = glm::dot(fromOther, fromOther);
+            float fromOtherDistSqr = cgt::math::LengthSqr(fromOther);
             if (fromOtherDistSqr > flockSightRange * flockSightRange)
             {
                 continue;
             }
 
-            ++othersInSight;
-
-            othersCumulativePosition += otherEnemy.position;
-            othersCumulativeDirection += otherEnemy.direction;
+            if (otherEnemy.distanceToGoal < enemy.distanceToGoal)
+            {
+                ++othersInSight;
+                othersCumulativePosition += otherEnemy.position;
+            }
 
             if (fromOtherDistSqr < flockDesiredSpacing * flockDesiredSpacing)
             {
+                if (otherEnemy.distanceToGoal < enemy.distanceToGoal)
+                {
+                    ++othersInFrontThatAreTooClose;
+                }
+
                 float fromOtherDist = glm::sqrt(fromOtherDistSqr);
                 glm::vec2 fromOtherNorm = fromOther / fromOtherDist;
                 float pushbackForce = 1.0f - glm::smoothstep(flockMinimumSpacing, flockDesiredSpacing, fromOtherDist);
-                pushbackFromOthers += fromOtherNorm * pushbackForce;
+                const glm::vec2 pushbackVector = fromOtherNorm * pushbackForce;
+                pushbackDirection += pushbackVector;
             }
         }
 
-        glm::vec2 directionDelta = nextWaypointDirection * flockWaypointSteeringFactor;
+        glm::vec2 roadRecenteringDirection = closestPathPoint - enemy.position;
+        const float distanceFromTheRoadCenter = glm::length(roadRecenteringDirection);
+        const float roadRecenteringForce = glm::smoothstep(flockRoadRecenteringStartDistance, flockRoadRecenteringMaxDistance, distanceFromTheRoadCenter);
+        roadRecenteringDirection = glm::normalize(roadRecenteringDirection) * roadRecenteringForce;
+
+        glm::vec2 recenteringDirection(0.0f);
         if (othersInSight > 0)
         {
             glm::vec2 othersAveragePosition = othersCumulativePosition / (float)othersInSight;
-            glm::vec2 centeringDirection = glm::normalize(othersAveragePosition - enemy.position);
-            directionDelta += centeringDirection * flockCenteringFactor;
-
-            directionDelta += glm::normalize(othersCumulativeDirection) * flockCommonDirectionFactor;
-
-            //directionDelta += pushbackFromOthers;
+            recenteringDirection = glm::normalize(othersAveragePosition - enemy.position);
         }
 
-        directionDelta += pathReadjust * flockPathReadjustFactor;
+        const float accelerationFactor = 10.0f;
+        const float acceleration = enemyType.speed * accelerationFactor;
 
-        enemyNext.direction = glm::normalize(enemy.direction + directionDelta * flockSteeringSpeed * delta);
-        enemyNext.rotation = cgt::math::VectorAngle(enemyNext.direction);
-        enemyNext.position += enemy.direction * enemyType.speed * delta;
-        enemyNext.position += pushbackFromOthers * enemyType.speed * flockPushbackFactor * delta;
+        enemyNext.velocity += targetDirection * flockWaypointSteeringFactor * acceleration * delta;
+        enemyNext.velocity += recenteringDirection * flockCenteringFactor * acceleration * delta;
+        enemyNext.velocity += pushbackDirection * flockPushbackFactor * acceleration * delta;
+        enemyNext.velocity += roadRecenteringDirection * flockRoadRecenteringFactor * acceleration * delta;
+
+        const float velocityLength = glm::length(enemyNext.velocity);
+        const glm::vec2 velocityNormalized = enemyNext.velocity / velocityLength;
+        if (velocityLength > enemyType.speed)
+        {
+            enemyNext.velocity = velocityNormalized * enemyType.speed;
+        }
+
+        const float pushbackSlowdownForce = glm::smoothstep(0.0f, 3.0f, (float)othersInFrontThatAreTooClose);
+        const float maxPushbackSlowdownFactor = 0.2f;
+        const float velocityMultiplier = 1.0f - maxPushbackSlowdownFactor * pushbackSlowdownForce;
+        enemyNext.velocity *= velocityMultiplier;
+
+        enemyNext.rotation = cgt::math::VectorAngle(velocityNormalized);
+        enemyNext.position += enemyNext.velocity * delta;
     }
 
     // towers update
@@ -299,9 +311,13 @@ void GameState::Interpolate(const GameState& prevState, const GameState& nextSta
         Enemy& result = outState.enemies.emplace_back();
         result = b;
         result.position = glm::lerp(a.position, b.position, factor);
-        result.rotation = glm::lerp(a.rotation, b.rotation, factor);
 
-        result.direction = glm::lerp(a.direction, b.direction, factor);
+        const float targetRotation = glm::abs(a.rotation - b.rotation) < 180.0f
+            ? b.rotation
+            : b.rotation - 360.0f;
+
+        result.rotation = glm::lerp(a.rotation, targetRotation, factor);
+
         result.remainingHealth = glm::lerp(a.remainingHealth, b.remainingHealth, factor);
     }
 

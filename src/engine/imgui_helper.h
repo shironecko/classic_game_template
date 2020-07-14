@@ -1,5 +1,7 @@
 #pragma once
 
+#include <engine/event_loop.h>
+
 namespace cgt
 {
 
@@ -15,10 +17,10 @@ namespace render
     class IRenderContext;
 }
 
-class ImGuiHelper
+class ImGuiHelper : public IEventListener
 {
 public:
-    static std::unique_ptr<ImGuiHelper> Create(std::shared_ptr<Window> window, std::shared_ptr<render::IRenderContext> render);
+    static std::shared_ptr<ImGuiHelper> Create(std::shared_ptr<Window> window, std::shared_ptr<render::IRenderContext> render);
 
     ~ImGuiHelper();
 
@@ -27,6 +29,8 @@ public:
 
     void BeginInvisibleFullscreenWindow();
     void EndInvisibleFullscreenWindow();
+
+    IEventListener::EventAction OnEvent(const SDL_Event& event) override;
 
 private:
     ImGuiHelper(std::shared_ptr<Window> window, std::shared_ptr<render::IRenderContext> render);

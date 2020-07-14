@@ -18,6 +18,9 @@ int GameMain()
 
     auto imguiHelper = cgt::ImGuiHelper::Create(window, render);
 
+    cgt::EventLoop eventLoop(window);
+    eventLoop.AddEventListener(imguiHelper);
+
     const float basePPU = 64.0f;
     const float SCALE_FACTORS[] = { 4.0f, 3.0f, 2.0f, 1.0f, 1.0f / 2.0f, 1.0f / 3.0f, 1.0f / 4.0f, 1.0f / 5.0f, 1.0f / 6.0f, 1.0f / 7.0f, 1.0f / 8.0f, 1.0f / 9.0f, 1.0f / 10.0f };
     i32 scaleFactorIdx = 3;
@@ -77,6 +80,26 @@ int GameMain()
             accumulatedDelta += scaledDt;
         }
 
+        bool lmbWasClicked = false;
+        while (eventLoop.PollEvent(event))
+        {
+            switch (event.type)
+            {
+            case SDL_QUIT:
+                quitRequested = true;
+                break;
+            case SDL_MOUSEWHEEL:
+                auto wheel = event.wheel;
+                scaleFactorIdx -= wheel.y;
+                scaleFactorIdx = glm::clamp(scaleFactorIdx, 0, (i32)SDL_arraysize(SCALE_FACTORS) - 1);
+                break;
+            case SDL_MOUSEBUTTONDOWN:
+                auto button = event.button;
+                lmbWasClicked = button.button == SDL_BUTTON_LEFT;
+                break;
+            }
+        }
+
         imguiHelper->NewFrame(dt, camera);
 
         // NOTE: prone to "spiral of death"
@@ -102,26 +125,6 @@ int GameMain()
             ImGui::Text("Sprites: %u", renderStats.spriteCount);
             ImGui::Text("Drawcalls: %u", renderStats.drawcallCount);
             ImGui::End();
-        }
-
-        bool lmbWasClicked = false;
-        while (window->PollEvent(event))
-        {
-            switch (event.type)
-            {
-            case SDL_QUIT:
-                quitRequested = true;
-                break;
-            case SDL_MOUSEWHEEL:
-                auto wheel = event.wheel;
-                scaleFactorIdx -= wheel.y;
-                scaleFactorIdx = glm::clamp(scaleFactorIdx, 0, (i32)SDL_arraysize(SCALE_FACTORS) - 1);
-                break;
-            case SDL_MOUSEBUTTONDOWN:
-                auto button = event.button;
-                lmbWasClicked = button.button == SDL_BUTTON_LEFT;
-                break;
-            }
         }
 
         glm::vec2 cameraMovInput(0.0f);

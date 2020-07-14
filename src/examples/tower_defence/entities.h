@@ -11,9 +11,10 @@ struct Entity
 
 struct Enemy : Entity
 {
-    glm::vec2 direction = glm::vec2(0.0f);
-    u32 targetPointIdx = 0;
+    glm::vec2 velocity = glm::vec2(0.0f);
     float remainingHealth = 0.0f;
+    u32 nextWaypointIdx = 1;
+    float distanceToGoal = 0.0f;
 };
 
 struct Tower : Entity

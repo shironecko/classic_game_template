@@ -122,8 +122,22 @@ inline glm::vec2 AABBClosestPoint(glm::vec2 point, AABB aabb)
 
 inline float VectorAngle(glm::vec2 vector)
 {
-    float radians = glm::acos(vector.x) * glm::sign(vector.y);
-    return glm::degrees(radians);
+    const float radians = glm::acos(vector.x) * glm::sign(vector.y);
+    const float degrees = glm::degrees(radians);
+    const float degreesWrapped = std::fmodf(degrees + 360.0f, 360.0f);
+    return degreesWrapped;
+}
+
+inline float LengthSqr(glm::vec2 vector)
+{
+    float lengthSqr = glm::dot(vector, vector);
+    return lengthSqr;
+}
+
+inline float DistanceSqr(glm::vec2 a, glm::vec2 b)
+{
+    float distanceSqr = LengthSqr(a - b);
+    return distanceSqr;
 }
 
 }

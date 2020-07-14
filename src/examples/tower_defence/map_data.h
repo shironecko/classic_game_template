@@ -7,6 +7,7 @@ struct EnemyPath
     std::string debugName;
     glm::vec4 debugColor;
     std::vector<glm::vec2> waypoints;
+    std::vector<float> distancesToGoal;
 
     static void Load(tson::Map& map, EnemyPath& outPath);
 

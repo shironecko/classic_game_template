@@ -7,12 +7,12 @@
 
 namespace cgt
 {
-std::unique_ptr<ImGuiHelper> ImGuiHelper::Create(
+std::shared_ptr<ImGuiHelper> ImGuiHelper::Create(
     std::shared_ptr<Window> window,
     std::shared_ptr<render::IRenderContext> render
 )
 {
-    auto helper = std::unique_ptr<ImGuiHelper>(new ImGuiHelper(window, render));
+    auto helper = std::shared_ptr<ImGuiHelper>(new ImGuiHelper(window, render));
     return helper;
 }
 
@@ -222,6 +222,29 @@ void ImGuiHelper::EndInvisibleFullscreenWindow()
 {
     ImGui::End();
     ImGui::PopStyleColor(1);
+}
+
+IEventListener::EventAction ImGuiHelper::OnEvent(const SDL_Event& event)
+{
+    const bool isKeyboardEvent =
+        event.type == SDL_KEYDOWN
+        || event.type == SDL_KEYUP
+        || event.type == SDL_TEXTINPUT;
+
+    const bool isMouseEvent =
+        event.type == SDL_MOUSEBUTTONDOWN
+        || event.type == SDL_MOUSEBUTTONUP
+        || event.type == SDL_MOUSEWHEEL;
+
+    auto& io = ImGui::GetIO();
+    const bool passMouseToImgui = io.WantCaptureMouse && isMouseEvent;
+    const bool passKeyboardToImgui = io.WantCaptureKeyboard && isKeyboardEvent;
+
+    const bool imguiConsumedEvent = ImGui_ImplSDL2_ProcessEvent(&event);
+
+    return (passMouseToImgui || passKeyboardToImgui) && imguiConsumedEvent
+       ? IEventListener::EventAction::Consume
+       : IEventListener::EventAction::Passthrough;
 }
 
 }

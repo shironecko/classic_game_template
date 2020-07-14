@@ -38,6 +38,14 @@ void EnemyPath::Load(tson::Map& map, EnemyPath& outPath)
 
         outPath.waypoints.emplace_back(finalPosition);
     }
+
+    outPath.distancesToGoal.resize(outPath.waypoints.size(), 0.0f);
+    for (i32 i = outPath.waypoints.size() - 2; i >= 0; --i)
+    {
+        const glm::vec2 a = outPath.waypoints[i];
+        const glm::vec2 b = outPath.waypoints[i + 1];
+        outPath.distancesToGoal[i] = outPath.distancesToGoal[i + 1] + glm::distance(a, b);
+    }
 }
 
 void EnemyPath::DebugRender()
