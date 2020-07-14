@@ -187,6 +187,30 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
     }
 
     // projectiles update
+    auto applyDamageToEnemy = [&](Enemy& enemy, const Projectile& projectile, const ProjectileType& projectileType) {
+        const bool enemyDied = enemy.remainingHealth <= projectileType.damage;
+        enemy.remainingHealth = glm::max(0.0f, enemy.remainingHealth - projectileType.damage);
+
+        auto& event = outGameEvents.emplace_back();
+        event.type = GameEvent::Type::ProjectileHit;
+        auto& eventData = event.data.projectileHitData;
+        eventData.projectileTypeIdx = projectile.typeIdx;
+        eventData.position = enemy.position;
+        eventData.enemyIndex = projectile.targetEnemyIndex;
+
+        if (enemyDied)
+        {
+            const EnemyType& enemyType = mapData.enemyTypes[enemy.typeIdx];
+            next.playerState.gold += enemyType.goldReward;
+
+            auto& event = outGameEvents.emplace_back();
+            event.type = GameEvent::Type::EnemyDied;
+            auto& eventData = event.data.enemyDiedData;
+            eventData.enemyIndex = projectile.targetEnemyIndex;
+        }
+
+    };
+
     for (u32 i = 0; i < initial.projectiles.size(); ++i)
     {
         const Projectile& proj = initial.projectiles[i];
@@ -219,28 +243,23 @@ void GameState::TimeStep(const MapData& mapData, const GameState& initial, GameS
             projNext.position += stepVec;
             next.projectiles.emplace_back(projNext);
         }
-        else if (targetEnemyAlive)
+        else
         {
-            Enemy& target = next.enemies[projNext.targetEnemyIndex];
-            const bool enemyDied = target.remainingHealth <= projectileType.damage;
-            target.remainingHealth = glm::max(0.0f, target.remainingHealth - projectileType.damage);
-
-            auto& event = outGameEvents.emplace_back();
-            event.type = GameEvent::Type::ProjectileHit;
-            auto& eventData = event.data.projectileHitData;
-            eventData.projectileTypeIdx = projNext.typeIdx;
-            eventData.position = target.position;
-            eventData.enemyId = projNext.targetEnemyIndex;
-
-            if (enemyDied)
+            if (targetEnemyAlive)
             {
-                const EnemyType& enemyType = mapData.enemyTypes[target.typeIdx];
-                next.playerState.gold += enemyType.goldReward;
+                Enemy& target = next.enemies[projNext.targetEnemyIndex];
+                applyDamageToEnemy(target, projNext, projectileType);
+            }
 
-                auto& event = outGameEvents.emplace_back();
-                event.type = GameEvent::Type::EnemyDied;
-                auto& eventData = event.data.enemyDiedData;
-                eventData.enemyId = projNext.targetEnemyIndex;
+            if (!cgt::math::IsNearlyZero(projectileType.splashRadius))
+            {
+                enemyQueryStorage.clear();
+                QueryEnemiesInRadius(next.enemies, targetPosition, projectileType.splashRadius, enemyQueryStorage);
+                for (u32 enemyIndex : enemyQueryStorage)
+                {
+                    Enemy& enemy = next.enemies[enemyIndex];
+                    applyDamageToEnemy(enemy, projNext, projectileType);
+                }
             }
         }
     }
@@ -367,6 +386,11 @@ void GameState::QueryEnemiesInRadius(const std::vector<Enemy>& enemies, glm::vec
     for (u32 i = 0; i < enemies.size(); ++i)
     {
         const Enemy& enemy = enemies[i];
+        if (cgt::math::IsNearlyZero(enemy.remainingHealth))
+        {
+            continue;
+        }
+
         const glm::vec2 x = enemy.position - position;
         const float distanceSqr = glm::dot(x, x);
         if (distanceSqr <= radiusSqr)

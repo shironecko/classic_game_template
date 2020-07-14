@@ -340,6 +340,7 @@ int GameMain()
             RenderEntity(entity, type, *tilesetHelper, drawList);
         });
 
+        imguiHelper->BeginInvisibleFullscreenWindow();
         interpolatedState.ForEachEnemy(mapData, [&](auto& enemy, auto& type) {
             auto& enemyType = mapData.enemyTypes[enemy.typeIdx];
 
@@ -354,14 +355,12 @@ int GameMain()
 
             glm::vec2 screenPosition = camera.WorldToScreen(enemy.position + hpOffset);
 
-            imguiHelper->BeginInvisibleFullscreenWindow();
-
             ImGui::SetCursorPos({ screenPosition.x, screenPosition.y });
             glm::vec2 screenSize = cgt::math::WorldToPixels(hpDim, camera.pixelsPerUnit);
             ImGui::ProgressBar(enemy.remainingHealth / enemyType.maxHealth, { screenSize.x, screenSize.y } , "");
 
-            imguiHelper->EndInvisibleFullscreenWindow();
         });
+        imguiHelper->EndInvisibleFullscreenWindow();
 
         mapData.enemyPath.DebugRender();
 

@@ -63,13 +63,13 @@ struct GameEvent
         struct ProjectileHitData
         {
             glm::vec2 position;
-            u32 enemyId;
+            u32 enemyIndex;
             u32 projectileTypeIdx;
         } projectileHitData;
 
         struct EnemyDiedData
         {
-            u32 enemyId;
+            u32 enemyIndex;
         } enemyDiedData;
     } data;
 };
