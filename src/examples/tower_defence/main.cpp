@@ -4,6 +4,7 @@
 #include <examples/tower_defence/entities.h>
 #include <examples/tower_defence/map_data.h>
 #include <examples/tower_defence/game_state.h>
+#include <examples/tower_defence/game_session.h>
 #include <examples/tower_defence/helper_functions.h>
 
 int GameMain()
@@ -28,36 +29,15 @@ int GameMain()
     cgt::render::CameraSimpleOrtho camera(*window);
     camera.pixelsPerUnit = 64.0f;
 
-    tson::Tileson mapParser;
-    tson::Map map = mapParser.parse(cgt::AssetPath("examples/maps/tower_defense.json"));
-    CGT_ASSERT_ALWAYS(map.getStatus() == tson::ParseStatus::OK);
-
-    auto tilesetHelper = cgt::TilesetHelper::LoadMapTilesets(map, cgt::AssetPath("examples/maps"), *render);
-    cgt::render::SpriteDrawList staticMapDrawList;
-    tilesetHelper->RenderTileLayers(map, staticMapDrawList, 0);
-
-    MapData mapData;
-    MapData::Load(map, mapData);
-
     GameCommandQueue gameCommands;
+    GameEventQueue gameEvents;
 
     // https://www.gafferongames.com/post/fix_your_timestep
     const float FIXED_DELTA = 1.0f / 30.0f;
-    GameState gameStates[2];
-    GameState* prevState = &gameStates[0];
-    GameState* nextState = &gameStates[1];
-    GameEventQueue gameEvents;
-
-    prevState->playerState.gold = 100;
-    prevState->playerState.lives = 20;
-    // warm-up
-    GameState::TimeStep(mapData, *prevState, *nextState, gameCommands, gameEvents, FIXED_DELTA);
-
     GameState interpolatedState;
 
     cgt::Clock clock;
     float accumulatedDelta = 0.0f;
-    cgt::render::SpriteDrawList drawList;
     cgt::render::RenderStats renderStats;
     SDL_Event event {};
 
@@ -67,12 +47,15 @@ int GameMain()
 
     u32 selectedTowerTypeId = 0;
 
+    auto gameSession = GameSession::FromMap(cgt::AssetPath("examples/maps/tower_defense.json"), *render, FIXED_DELTA);
+    cgt::render::SpriteDrawList effectsDrawList;
+
     bool quitRequested = false;
     while (!quitRequested)
     {
         ZoneScopedN("Main Loop");
 
-        drawList.clear();
+        effectsDrawList.clear();
 
         const float dt = clock.Tick();
         {
@@ -107,8 +90,7 @@ int GameMain()
         while (accumulatedDelta > FIXED_DELTA)
         {
             accumulatedDelta -= FIXED_DELTA;
-            std::swap(prevState, nextState);
-            GameState::TimeStep(mapData, *prevState, *nextState, gameCommands, gameEvents, FIXED_DELTA);
+            gameSession->TimeStep(gameCommands, gameEvents);
             gameCommands.clear();
 
             // FIXME: actually make use of events
@@ -116,7 +98,7 @@ int GameMain()
         }
 
         const float interpolationFactor = glm::smoothstep(0.0f, FIXED_DELTA, accumulatedDelta);
-        GameState::Interpolate(*prevState, *nextState, interpolatedState, interpolationFactor);
+        gameSession->InterpolateState(interpolatedState, interpolationFactor);
 
         {
             ImGui::SetNextWindowSize({200, 80}, ImGuiCond_FirstUseEver);
@@ -160,8 +142,8 @@ int GameMain()
         int mouseX, mouseY;
         SDL_GetMouseState(&mouseX, &mouseY);
         glm::vec2 world = camera.ScreenToWorld((u32)mouseX, (u32)mouseY);
-        auto tilePos = mapData.buildableMap.WorldToTile(world);
-        bool buildable = mapData.buildableMap.Query(world);
+        auto tilePos = gameSession->mapData.buildableMap.WorldToTile(world);
+        bool buildable = gameSession->mapData.buildableMap.Query(world);
 
         {
             ImGui::BeginMainMenuBar();
@@ -195,12 +177,12 @@ int GameMain()
             Im3d::PopColor();
 
 
-            const TowerType& towerType = mapData.towerTypes[selectedTowerTypeId];
+            const TowerType& towerType = gameSession->mapData.towerTypes[selectedTowerTypeId];
 
             Im3d::DrawCircle(glm::vec3(tilePos, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), towerType.range);
 
-            auto& sprite = drawList.AddSprite();
-            tilesetHelper->GetTileSpriteSrc(towerType.tileId, sprite.src);
+            auto& sprite = effectsDrawList.AddSprite();
+            gameSession->tilesetHelper->GetTileSpriteSrc(towerType.tileId, sprite.src);
             sprite.position = glm::vec2(tilePos.x, tilePos.y);
             sprite.colorTint = glm::vec4(glm::vec3(selectionColor), 0.3f);
             sprite.layer = 5;
@@ -233,12 +215,12 @@ int GameMain()
             static u32 selectedEnemyIdx = 0;
             ImGui::Begin("Spawn Enemies");
 
-            if (ImGui::BeginCombo("Enemy Type", mapData.enemyTypes[selectedEnemyIdx].name.c_str()))
+            if (ImGui::BeginCombo("Enemy Type", gameSession->mapData.enemyTypes[selectedEnemyIdx].name.c_str()))
             {
-                for (u32 i = 0; i < mapData.enemyTypes.size(); ++i)
+                for (u32 i = 0; i < gameSession->mapData.enemyTypes.size(); ++i)
                 {
                     bool selected = i == selectedEnemyIdx;
-                    if (ImGui::Selectable(mapData.enemyTypes[i].name.c_str(), selected))
+                    if (ImGui::Selectable(gameSession->mapData.enemyTypes[i].name.c_str(), selected))
                     {
                         selectedEnemyIdx = i;
                     }
@@ -285,12 +267,12 @@ int GameMain()
 
         {
             ImGui::Begin("Towers");
-            for (u32 i = 0; i <mapData.towerTypes.size(); ++i)
+            for (u32 i = 0; i <gameSession->mapData.towerTypes.size(); ++i)
             {
-                TowerType& towerType = mapData.towerTypes[i];
-                ProjectileType& projectileType = mapData.projectileTypes[towerType.projectileTypeIdx];
+                TowerType& towerType = gameSession->mapData.towerTypes[i];
+                ProjectileType& projectileType = gameSession->mapData.projectileTypes[towerType.projectileTypeIdx];
                 cgt::render::SpriteSource spriteSrc;
-                tilesetHelper->GetTileSpriteSrc(towerType.tileId, spriteSrc);
+                gameSession->tilesetHelper->GetTileSpriteSrc(towerType.tileId, spriteSrc);
                 auto textureId = render->GetImTextureID(spriteSrc.texture);
 
                 ImGui::ImageButton(textureId, { 64.0f, 64.0f }, { spriteSrc.uv.min.x, spriteSrc.uv.min.y }, { spriteSrc.uv.max.x, spriteSrc.uv.max.y });
@@ -336,13 +318,9 @@ int GameMain()
             ImGui::End();
         }
 
-        interpolatedState.ForEachEntity(mapData, [&](auto& entity, auto& type) {
-            RenderEntity(entity, type, *tilesetHelper, drawList);
-        });
-
         imguiHelper->BeginInvisibleFullscreenWindow();
-        interpolatedState.ForEachEnemy(mapData, [&](auto& enemy, auto& type) {
-            auto& enemyType = mapData.enemyTypes[enemy.typeIdx];
+        interpolatedState.ForEachEnemy(gameSession->mapData, [&](auto& enemy, auto& type) {
+            auto& enemyType = gameSession->mapData.enemyTypes[enemy.typeIdx];
 
             if (cgt::math::AreNearlyEqUlps(enemy.remainingHealth, enemyType.maxHealth)
                 || cgt::math::IsNearlyZero(enemy.remainingHealth))
@@ -362,12 +340,12 @@ int GameMain()
         });
         imguiHelper->EndInvisibleFullscreenWindow();
 
-        mapData.enemyPath.DebugRender();
+        gameSession->mapData.enemyPath.DebugRender();
 
         renderStats.Reset();
         render->Clear({ 0.2f, 0.2f, 0.2f, 1.0f });
-        renderStats += render->Submit(staticMapDrawList, camera, false);
-        renderStats += render->Submit(drawList, camera, false);
+        renderStats += gameSession->RenderWorld(interpolatedState, *render, camera);
+        renderStats += render->Submit(effectsDrawList, camera, false);
         imguiHelper->RenderUi(camera);
         render->Present();
 
