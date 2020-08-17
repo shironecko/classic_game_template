@@ -18,9 +18,11 @@ int GameMain()
         .Build();
 
     auto imguiHelper = cgt::ImGuiHelper::Create(window, render);
+    auto input = cgt::InputHelper::Create(cgt::InputHelper::InputProcessingMode::Consume);
 
     cgt::EventLoop eventLoop(window);
     eventLoop.AddEventListener(imguiHelper);
+    eventLoop.AddEventListener(input);
 
     const float basePPU = 64.0f;
     const float SCALE_FACTORS[] = { 4.0f, 3.0f, 2.0f, 1.0f, 1.0f / 2.0f, 1.0f / 3.0f, 1.0f / 4.0f, 1.0f / 5.0f, 1.0f / 6.0f, 1.0f / 7.0f, 1.0f / 8.0f, 1.0f / 9.0f, 1.0f / 10.0f };
@@ -63,7 +65,8 @@ int GameMain()
             accumulatedDelta += scaledDt;
         }
 
-        bool lmbWasClicked = false;
+        input->NewFrame();
+
         while (eventLoop.PollEvent(event))
         {
             switch (event.type)
@@ -71,19 +74,23 @@ int GameMain()
             case SDL_QUIT:
                 quitRequested = true;
                 break;
-            case SDL_MOUSEWHEEL:
-                auto wheel = event.wheel;
-                scaleFactorIdx -= wheel.y;
-                scaleFactorIdx = glm::clamp(scaleFactorIdx, 0, (i32)SDL_arraysize(SCALE_FACTORS) - 1);
-                break;
-            case SDL_MOUSEBUTTONDOWN:
-                auto button = event.button;
-                lmbWasClicked = button.button == SDL_BUTTON_LEFT;
-                break;
             }
         }
 
         imguiHelper->NewFrame(dt, camera);
+
+        int mouseWheelMotion = 0;
+        if (input->IsKeyPressed(cgt::KeyCode::MouseWheelUp))
+        {
+            mouseWheelMotion = 1;
+        }
+        else if (input->IsKeyPressed(cgt::KeyCode::MouseWheelDown))
+        {
+            mouseWheelMotion = -1;
+        }
+        scaleFactorIdx -= mouseWheelMotion;
+        scaleFactorIdx = glm::clamp(scaleFactorIdx, 0, (i32)SDL_arraysize(SCALE_FACTORS) - 1);
+
 
         // NOTE: prone to "spiral of death"
         // see https://www.gafferongames.com/post/fix_your_timestep/
@@ -111,20 +118,19 @@ int GameMain()
 
         glm::vec2 cameraMovInput(0.0f);
         const float CAMERA_SPEED = 5.0f;
-        auto* keyboard = SDL_GetKeyboardState(nullptr);
-        if (keyboard[SDL_SCANCODE_S])
+        if (input->IsKeyHeld(cgt::KeyCode::S))
         {
             cameraMovInput.y -= 1.0f;
         }
-        if (keyboard[SDL_SCANCODE_W])
+        if (input->IsKeyHeld(cgt::KeyCode::W))
         {
             cameraMovInput.y += 1.0f;
         }
-        if (keyboard[SDL_SCANCODE_A])
+        if (input->IsKeyHeld(cgt::KeyCode::A))
         {
             cameraMovInput.x -= 1.0f;
         }
-        if (keyboard[SDL_SCANCODE_D])
+        if (input->IsKeyHeld(cgt::KeyCode::D))
         {
             cameraMovInput.x += 1.0f;
         }
@@ -139,9 +145,8 @@ int GameMain()
         camera.pixelsPerUnit = basePPU * SCALE_FACTORS[scaleFactorIdx];
 
 
-        int mouseX, mouseY;
-        SDL_GetMouseState(&mouseX, &mouseY);
-        glm::vec2 world = camera.ScreenToWorld((u32)mouseX, (u32)mouseY);
+        auto mouse = input->GetMousePosition();
+        glm::vec2 world = camera.ScreenToWorld(mouse.x, mouse.y);
         auto tilePos = gameSession->mapData.buildableMap.WorldToTile(world);
         bool buildable = gameSession->mapData.buildableMap.Query(world);
 
@@ -160,7 +165,7 @@ int GameMain()
         {
             ImGui::Begin("Mouse To World");
 
-            ImGui::Text("Screen position: (%d, %d)", mouseX, mouseY);
+            ImGui::Text("Screen position: (%d, %d)", mouse.x, mouse.y);
             ImGui::Text("World position: (%.2f, %.2f)", world.x, world.y);
             ImGui::Text("Tile Pos: (%d, %d)", tilePos.x, tilePos.y);
             ImGui::Text("Buildable: %d", (int)buildable);
@@ -188,7 +193,7 @@ int GameMain()
             sprite.layer = 5;
         }
 
-        if (lmbWasClicked && buildable)
+        if (input->IsKeyPressed(cgt::KeyCode::LeftMouseButton) && buildable)
         {
             auto& gameCmd = gameCommands.emplace_back();
             gameCmd.type = GameCommand::Type::BuildTower;

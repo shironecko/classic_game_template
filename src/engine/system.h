@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <filesystem>
 #include <fstream>
+#include <bitset>
 
 #define CGT_PANIC(fmtStr, ...)                                                                                      \
 do {                                                                                                                \

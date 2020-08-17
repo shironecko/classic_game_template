@@ -9,4 +9,5 @@
 #include <engine/clock.h>
 #include <engine/imgui_helper.h>
 #include <engine/tileset_helper.h>
+#include <engine/input_helper.h>
 #include <engine/math.h>
