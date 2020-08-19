@@ -1,59 +1,46 @@
 #include <engine/api.h>
 #include <render_core/api.h>
 
+class Game : public cgt::IGame
+{
+public:
+    void Initialize(cgt::Engine& engine) override
+    {
+        m_Camera.windowDimensions = engine.GetWindowDimensions();
+        m_Camera.pixelsPerUnit = 16.0f;
+    }
+
+    ControlFlow Update(cgt::Engine& engine, float deltaTime, bool quitRequestedByUser) override
+    {
+        m_Sprites.clear();
+
+        ImGui::ShowDemoWindow();
+
+        auto& testSprite = m_Sprites.AddSprite();
+        testSprite.scale = {10.0f, 10.0f};
+        engine.RenderSprites(m_Sprites);
+
+        return quitRequestedByUser
+            ? cgt::IGame::ControlFlow::TerminateGame
+            : cgt::IGame::ControlFlow::ContinueRunning;
+    }
+
+    void Shutdown(cgt::Engine& engine) override
+    {
+
+    }
+
+    cgt::render::ICamera& GetMainCamera() override { return m_Camera; }
+
+private:
+    cgt::render::CameraSimpleOrtho m_Camera;
+    cgt::render::SpriteDrawList m_Sprites;
+};
+
 int GameMain()
 {
-    auto window = cgt::WindowConfig::Default()
-        .WithTitle("Basic Example")
-        .Build();
-
-    auto render= cgt::render::RenderConfig::Default(window)
-        .Build();
-
-    auto imguiHelper = cgt::ImGuiHelper::Create(window, render);
-
-    cgt::render::SpriteDrawList drawList;
-    cgt::render::CameraSimpleOrtho camera(*window);
-    camera.pixelsPerUnit = 16.0f;
-
-    cgt::Clock frameClock;
-    SDL_Event event {};
-    cgt::render::RenderStats renderStats {};
-    bool quitRequested = false;
-    while (!quitRequested)
-    {
-        const float dt = frameClock.Tick();
-
-        imguiHelper->NewFrame(dt, camera);
-
-        while (window->PollEvent(event))
-        {
-            switch (event.type)
-            {
-            case SDL_QUIT:
-                quitRequested = true;
-                break;
-            }
-        }
-
-        {
-            ImGui::SetNextWindowSize({200, 80}, ImGuiCond_FirstUseEver);
-            ImGui::Begin("Render Stats");
-            ImGui::Text("Frame time: %.2fms", dt * 1000.0f);
-            ImGui::Text("Sprites: %d", renderStats.spriteCount);
-            ImGui::Text("Drawcalls: %d", renderStats.drawcallCount);
-            ImGui::End();
-        }
-
-        drawList.clear();
-        auto& testSprite = drawList.AddSprite();
-        testSprite.scale = {10.0f, 10.0f};
-
-        render->Clear({ 1.0f, 0.3f, 1.0f, 1.0f });
-        renderStats = render->Submit(drawList, camera);
-        imguiHelper->RenderUi(camera);
-        render->Present();
-    }
+    cgt::Engine engine;
+    engine.Run<Game>();
 
     return 0;
 }
