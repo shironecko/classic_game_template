@@ -8,7 +8,7 @@ add_library(engine
     math.cpp math.h
     api.h
     extern/tracy/TracyClient.cpp
-    extern/im3d/im3d.cpp tileset_helper.cpp tileset_helper.h event_loop.cpp event_loop.h input_helper.cpp input_helper.h)
+    extern/im3d/im3d.cpp tileset_helper.cpp tileset_helper.h event_loop.cpp event_loop.h input_helper.cpp input_helper.h engine.cpp engine.h)
 
 target_compile_definitions(engine
     PUBLIC

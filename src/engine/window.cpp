@@ -4,43 +4,16 @@
 
 namespace cgt
 {
-WindowConfig WindowConfig::Default() { return WindowConfig(); }
 
-WindowConfig WindowConfig::WithTitle(const char* title)
+Window::Window(const char* title, glm::uvec2 dimensions)
 {
-    this->title = title;
-    return *this;
-}
-
-WindowConfig WindowConfig::WithDimensions(u32 width, u32 height)
-{
-    this->width = width;
-    this->height = height;
-    return *this;
-}
-
-std::shared_ptr<Window> WindowConfig::Build() const
-{
-    return Window::BuildWithConfig(*this);
-}
-
-std::shared_ptr<Window> Window::BuildWithConfig(const WindowConfig& config)
-{
-    auto window = SDL_CreateWindow(
-        config.title.c_str(),
+    m_Window = SDL_CreateWindow(
+        title,
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        config.width,
-        config.height,
+        dimensions.x,
+        dimensions.y,
         SDL_WINDOW_SHOWN);
-
-    Window* windowWrapper = new Window(window);
-    return std::shared_ptr<Window>(windowWrapper);
-}
-
-Window::Window(SDL_Window* window)
-    : m_Window(window)
-{
 }
 
 Window::~Window()
@@ -53,20 +26,12 @@ bool Window::PollEvent(SDL_Event& outEvent)
     return SDL_PollEvent(&outEvent) == 1;
 }
 
-u32 Window::GetWidth() const
+glm::uvec2 Window::GetDimensions() const
 {
-    int width, unused;
-    SDL_GL_GetDrawableSize(m_Window, &width, &unused);
+    int width, height;
+    SDL_GL_GetDrawableSize(m_Window, &width, &height);
 
-    return width;
-}
-
-u32 Window::GetHeight() const
-{
-    int unused, height;
-    SDL_GL_GetDrawableSize(m_Window, &unused, &height);
-
-    return height;
+    return { (u32)width, (u32)height };
 }
 
 }

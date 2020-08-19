@@ -8,12 +8,12 @@
 class GameSession
 {
 public:
-    static std::unique_ptr<GameSession> FromMap(const std::filesystem::path mapAbsolutePath, cgt::render::IRenderContext& render, float fixedTimeDelta);
+    static std::unique_ptr<GameSession> FromMap(const std::filesystem::path mapAbsolutePath, cgt::Engine& engine, float fixedTimeDelta);
 
     void TimeStep(const GameCommandQueue& commands, GameEventQueue& outGameEvents);
     void InterpolateState(GameState& outState, float amount);
 
-    cgt::render::RenderStats RenderWorld(GameState& interpolatedState, cgt::render::IRenderContext& render, cgt::render::ICamera& camera);
+    void RenderWorld(GameState& interpolatedState, cgt::Engine& engine);
 
     MapData mapData;
     std::unique_ptr<cgt::TilesetHelper> tilesetHelper;

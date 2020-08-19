@@ -23,14 +23,14 @@ private:
 class RenderContextDX11 : public IRenderContext, private NonCopyable
 {
 public:
-    static std::shared_ptr<RenderContextDX11> BuildWithConfig(RenderConfig config);
+    static std::unique_ptr<RenderContextDX11> Create(SDL_Window* window);
 
     TextureHandle LoadTexture(const std::filesystem::path& absolutePath) override;
     ImTextureID GetImTextureID(const TextureHandle& texture) override;
     usize GetTextureSortKey(const TextureHandle& texture) override;
 
-    void Clear(glm::vec4 clearColor) override;
-    RenderStats Submit(SpriteDrawList& drawList, const ICamera& camera, bool sortBeforeRendering = true) override;
+    void Clear(glm::vec4 clearColor, glm::uvec2 windowDimensions) override;
+    RenderStats Submit(SpriteDrawList& drawList, const ICamera& camera, glm::uvec2 windowDimensions, bool sortBeforeRendering = true) override;
     void Present() override;
 
 protected:
@@ -41,18 +41,16 @@ protected:
 
     void Im3dBindingsInit() override;
     void Im3dBindingsNewFrame() override;
-    void Im3dBindingsRender(const ICamera& camera) override;
+    void Im3dBindingsRender(const ICamera& camera, glm::uvec2 windowDimensions) override;
     void Im3dBindingsShutdown() override;
 
 private:
     static constexpr usize MAX_BATCH_SIZE = 1024;
 
-    explicit RenderContextDX11(std::shared_ptr<Window> window);
+    RenderContextDX11() = default;
 
-    void SetUpRenderTarget();
+    void SetUpRenderTarget(glm::uvec2 windowDimensions);
     HRESULT LoadTextureFromMemory(const u8* data, usize size, TextureData& outData);
-
-    std::shared_ptr<Window> m_Window;
 
     ComPtr<ID3D11Device> m_Device;
     ComPtr<ID3D11DeviceContext> m_Context;

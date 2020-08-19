@@ -1,5 +1,4 @@
 add_library(render_core
-    render_config.cpp render_config.h
     i_render_context.h
     sprite_draw_list.cpp sprite_draw_list.h
     missingno.png.h

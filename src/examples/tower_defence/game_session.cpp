@@ -3,7 +3,7 @@
 #include <examples/tower_defence/game_session.h>
 #include <examples/tower_defence/helper_functions.h>
 
-std::unique_ptr<GameSession> GameSession::FromMap(const std::filesystem::path mapAbsolutePath, cgt::render::IRenderContext& render, float fixedTimeDelta)
+std::unique_ptr<GameSession> GameSession::FromMap(const std::filesystem::path mapAbsolutePath, cgt::Engine& engine, float fixedTimeDelta)
 {
     auto gameSession = std::unique_ptr<GameSession>(new GameSession());
 
@@ -13,7 +13,7 @@ std::unique_ptr<GameSession> GameSession::FromMap(const std::filesystem::path ma
 
     auto mapBasePath = mapAbsolutePath;
     mapBasePath.remove_filename();
-    gameSession->tilesetHelper = cgt::TilesetHelper::LoadMapTilesets(map, mapBasePath, render);
+    gameSession->tilesetHelper = cgt::TilesetHelper::LoadMapTilesets(map, mapBasePath, engine);
 
     cgt::render::SpriteDrawList staticMapDrawList;
     gameSession->tilesetHelper->RenderTileLayers(map, gameSession->m_StaticMapDrawList, 0);
@@ -49,7 +49,7 @@ void GameSession::InterpolateState(GameState& outState, float amount)
     GameState::Interpolate(*m_PrevState, *m_NextState, outState, amount);
 }
 
-cgt::render::RenderStats GameSession::RenderWorld(GameState& interpolatedState, cgt::render::IRenderContext& render, cgt::render::ICamera& camera)
+void GameSession::RenderWorld(GameState& interpolatedState, cgt::Engine& engine)
 {
     m_EntitiesDrawList.clear();
 
@@ -57,8 +57,6 @@ cgt::render::RenderStats GameSession::RenderWorld(GameState& interpolatedState, 
         RenderEntity(entity, type, *tilesetHelper, m_EntitiesDrawList);
     });
 
-    auto renderStats = render.Submit(m_StaticMapDrawList, camera, false);
-    renderStats += render.Submit(m_EntitiesDrawList, camera, false);
-
-    return renderStats;
+    engine.RenderSprites(m_StaticMapDrawList, false);
+    engine.RenderSprites(m_EntitiesDrawList, false);
 }

@@ -13,8 +13,6 @@ namespace cgt::render
 class CameraSimpleOrtho : public ICamera
 {
 public:
-    CameraSimpleOrtho(const Window& window);
-
     glm::mat4 GetView() const override;
     glm::mat4 GetProjection() const override;
     glm::mat4 GetViewProjection() const override;
@@ -31,10 +29,7 @@ public:
     bool snapToPixel = true;
 
     glm::vec2 position = glm::vec2(0.0f);
-
-private:
-    float windowWidth;
-    float windowHeight;
+    glm::uvec2 windowDimensions = glm::uvec2(1);
 };
 
 }

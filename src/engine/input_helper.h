@@ -146,7 +146,7 @@ public:
         Consume,
     };
 
-    static std::shared_ptr<InputHelper> Create(InputProcessingMode mode);
+    InputHelper(InputProcessingMode mode);
 
     EventAction OnEvent(const SDL_Event& event) override;
 
@@ -163,8 +163,6 @@ public:
 private:
     typedef std::array<KeyCode, SDL_Scancode::SDL_NUM_SCANCODES> ScancodeMappings;
     typedef std::bitset<(usize)KeyCode::Count> KeysBitset;
-
-    InputHelper(InputProcessingMode mode);
 
     bool Get(const KeysBitset& bitset, KeyCode key) const;
     void Set(KeysBitset& bitset, SDL_Scancode scancode, bool active);

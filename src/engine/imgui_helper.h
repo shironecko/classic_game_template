@@ -20,25 +20,21 @@ namespace render
 class ImGuiHelper : public IEventListener
 {
 public:
-    static std::shared_ptr<ImGuiHelper> Create(std::shared_ptr<Window> window, std::shared_ptr<render::IRenderContext> render);
+    ImGuiHelper(Window& window, render::IRenderContext& render);
+    void Shutdown(render::IRenderContext& render);
 
-    ~ImGuiHelper();
+    void NewFrame(Window& window, render::IRenderContext& render, const render::ICamera& camera, float deltaTime);
+    void RenderUi(render::IRenderContext& render, const render::ICamera& camera, glm::uvec2 windowDimensions);
 
-    void NewFrame(float dt, const render::ICamera& camera);
-    void RenderUi(const render::ICamera& camera);
-
-    void BeginInvisibleFullscreenWindow();
-    void EndInvisibleFullscreenWindow();
+    static void BeginInvisibleFullscreenWindow();
+    static void EndInvisibleFullscreenWindow();
 
     IEventListener::EventAction OnEvent(const SDL_Event& event) override;
 
 private:
-    ImGuiHelper(std::shared_ptr<Window> window, std::shared_ptr<render::IRenderContext> render);
-
     void RenderIm3dText(const render::ICamera& camera);
 
-    std::shared_ptr<Window> m_Window;
-    std::shared_ptr<render::IRenderContext> m_Render;
+    glm::uvec2 m_WindowDimensions;
 };
 
 }

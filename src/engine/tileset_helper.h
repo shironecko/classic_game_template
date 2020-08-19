@@ -5,19 +5,21 @@
 namespace cgt
 {
 
+class Engine;
+
 namespace render { class IRenderContext; }
 
 class TilesetHelper
 {
 public:
-    static std::unique_ptr<TilesetHelper> LoadMapTilesets(tson::Map& map, const std::filesystem::path& baseMapAbsPath, cgt::render::IRenderContext& render);
+    static std::unique_ptr<TilesetHelper> LoadMapTilesets(tson::Map& map, const std::filesystem::path& baseMapAbsPath, Engine& engine);
 
     bool GetTileSpriteSrc(u32 tileIdx, cgt::render::SpriteSource& outSrc) const;
     void RenderTileLayers(tson::Map& map, cgt::render::SpriteDrawList& outDrawList, u8 baseSpriteLayer) const;
     void RenderTileLayer(tson::Layer& layer, cgt::render::SpriteDrawList& outDrawList, u8 spriteLayer) const;
 
 private:
-    TilesetHelper(tson::Map& map, const std::filesystem::path& baseMapAbsPath, cgt::render::IRenderContext& render);
+    TilesetHelper(tson::Map& map, const std::filesystem::path& baseMapAbsPath, Engine& engine);
 
     class Tileset
     {

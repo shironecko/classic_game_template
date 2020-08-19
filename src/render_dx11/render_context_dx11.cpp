@@ -22,14 +22,15 @@ struct SpriteInstanceData
     float rotation;
 };
 
-std::shared_ptr<IRenderContext> IRenderContext::BuildWithConfig(RenderConfig config)
+static std::unique_ptr<IRenderContext> Create();
+std::unique_ptr<IRenderContext> IRenderContext::Create(SDL_Window* window)
 {
-    return RenderContextDX11::BuildWithConfig(std::move(config));
+    return RenderContextDX11::Create(window);
 }
 
-std::shared_ptr<RenderContextDX11> RenderContextDX11::BuildWithConfig(RenderConfig config)
+std::unique_ptr<RenderContextDX11> RenderContextDX11::Create(SDL_Window* window)
 {
-    auto context = std::shared_ptr<RenderContextDX11>(new RenderContextDX11(config.GetSDLWindow()));
+    auto context = std::unique_ptr<RenderContextDX11>(new RenderContextDX11());
 
     UINT deviceFlags = 0;
     CGT_DEBUG_ONLY(deviceFlags |= D3D11_CREATE_DEVICE_DEBUG);
@@ -69,13 +70,15 @@ std::shared_ptr<RenderContextDX11> RenderContextDX11::BuildWithConfig(RenderConf
 
     SDL_SysWMinfo wmInfo;
     SDL_VERSION(&wmInfo.version);
-    SDL_GetWindowWMInfo(context->m_Window->GetSDLWindow(), &wmInfo);
+    SDL_GetWindowWMInfo(window, &wmInfo);
     HWND hwnd = wmInfo.info.win.window;
 
+    int windowWidth, windowHeight;
+    SDL_GL_GetDrawableSize(window, &windowWidth, &windowHeight);
     DXGI_MODE_DESC modeDesc {};
     modeDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    modeDesc.Width = context->m_Window->GetWidth();
-    modeDesc.Height = context->m_Window->GetHeight();
+    modeDesc.Width = windowWidth;
+    modeDesc.Height = windowHeight;
     modeDesc.RefreshRate.Numerator = 60;
     modeDesc.RefreshRate.Denominator = 1;
 
@@ -209,15 +212,15 @@ std::shared_ptr<RenderContextDX11> RenderContextDX11::BuildWithConfig(RenderConf
     return context;
 }
 
-void RenderContextDX11::Clear(glm::vec4 clearColor)
+void RenderContextDX11::Clear(glm::vec4 clearColor, glm::uvec2 windowDimensions)
 {
     ZoneScoped;
 
-    SetUpRenderTarget();
+    SetUpRenderTarget(windowDimensions);
     m_Context->ClearRenderTargetView(m_RTView.Get(), &clearColor.x);
 }
 
-RenderStats RenderContextDX11::Submit(SpriteDrawList& drawList, const ICamera& camera, bool sortBeforeRendering)
+RenderStats RenderContextDX11::Submit(SpriteDrawList& drawList, const ICamera& camera, glm::uvec2 windowDimensions, bool sortBeforeRendering)
 {
     ZoneScoped;
 
@@ -226,7 +229,7 @@ RenderStats RenderContextDX11::Submit(SpriteDrawList& drawList, const ICamera& c
         ZoneScopedN("Setup");
         stats.spriteCount = drawList.size();
 
-        SetUpRenderTarget();
+        SetUpRenderTarget(windowDimensions);
 
         m_Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         m_Context->IASetIndexBuffer(m_QuadIndices.Get(), DXGI_FORMAT_R16_UINT, 0);
@@ -317,15 +320,15 @@ RenderStats RenderContextDX11::Submit(SpriteDrawList& drawList, const ICamera& c
     return stats;
 }
 
-void RenderContextDX11::SetUpRenderTarget()
+void RenderContextDX11::SetUpRenderTarget(glm::uvec2 windowDimensions)
 {
     ZoneScoped;
 
     D3D11_VIEWPORT viewport {};
     viewport.TopLeftX = 0.0f;
     viewport.TopLeftY = 0.0f;
-    viewport.Width = (float)m_Window->GetWidth();
-    viewport.Height = (float)m_Window->GetHeight();
+    viewport.Width = (float)windowDimensions.x;
+    viewport.Height = (float)windowDimensions.y;
     viewport.MinDepth = 0.0f;
     viewport.MaxDepth = 1.0f;
     m_Context->RSSetViewports(1, &viewport);
@@ -372,19 +375,14 @@ void RenderContextDX11::Im3dBindingsInit()
 
 void RenderContextDX11::Im3dBindingsNewFrame() {}
 
-void RenderContextDX11::Im3dBindingsRender(const ICamera& camera)
+void RenderContextDX11::Im3dBindingsRender(const ICamera& camera, glm::uvec2 windowDimensions)
 {
-    m_Im3dRender->Render(camera, m_Window->GetWidth(), m_Window->GetHeight());
+    m_Im3dRender->Render(camera, windowDimensions.x, windowDimensions.y);
 }
 
 void RenderContextDX11::Im3dBindingsShutdown()
 {
     m_Im3dRender.reset();
-}
-
-RenderContextDX11::RenderContextDX11(std::shared_ptr<Window> window)
-    : m_Window(std::move(window))
-{
 }
 
 TextureHandle RenderContextDX11::LoadTexture(const std::filesystem::path& absolutePath)

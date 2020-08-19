@@ -6,7 +6,7 @@ add_executable(tower_defence
     map_data.cpp map_data.h
     game_session.cpp game_session.h
     helper_functions.cpp helper_functions.h
-    pch.h)
+    pch.h game.cpp game.h)
 
 target_link_libraries(tower_defence
     engine

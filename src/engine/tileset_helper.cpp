@@ -1,6 +1,7 @@
 #include <engine/pch.h>
 
 #include <engine/tileset_helper.h>
+#include <engine/engine.h>
 #include <engine/assets.h>
 
 namespace cgt
@@ -61,18 +62,18 @@ bool TilesetHelper::Tileset::GetTileSpriteSrc(u32 tileIdx, render::SpriteSource&
     return false;
 }
 
-std::unique_ptr<TilesetHelper> TilesetHelper::LoadMapTilesets(tson::Map& map, const std::filesystem::path& baseMapAbsPath, cgt::render::IRenderContext& render)
+std::unique_ptr<TilesetHelper> TilesetHelper::LoadMapTilesets(tson::Map& map, const std::filesystem::path& baseMapAbsPath, Engine& engine)
 {
-    auto newTilesetHelper = std::unique_ptr<TilesetHelper>(new TilesetHelper(map, baseMapAbsPath, render));
+    auto newTilesetHelper = std::unique_ptr<TilesetHelper>(new TilesetHelper(map, baseMapAbsPath, engine));
     return newTilesetHelper;
 }
 
-TilesetHelper::TilesetHelper(tson::Map& map, const std::filesystem::path& baseMapAbsPath, cgt::render::IRenderContext& render)
+TilesetHelper::TilesetHelper(tson::Map& map, const std::filesystem::path& baseMapAbsPath, Engine& engine)
 {
     for (auto& tileset : map.getTilesets())
     {
         auto texturePath = baseMapAbsPath / tileset.getImagePath();
-        auto texture = render.LoadTexture(texturePath);
+        auto texture = engine.LoadTexture(texturePath);
         Tileset::Load(map, tileset, std::move(texture), m_Tilesets.emplace_back());
     }
 }

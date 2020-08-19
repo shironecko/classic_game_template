@@ -121,11 +121,6 @@ InputHelper::InputHelper(InputHelper::InputProcessingMode mode)
     m_ScancodeMappings[SDL_SCANCODE_RGUI] = KeyCode::RightGui;
 }
 
-std::shared_ptr<InputHelper> InputHelper::Create(InputHelper::InputProcessingMode mode)
-{
-    return std::shared_ptr<InputHelper>(new InputHelper(mode));
-}
-
 IEventListener::EventAction InputHelper::OnEvent(const SDL_Event& event)
 {
     bool eventHandled = false;

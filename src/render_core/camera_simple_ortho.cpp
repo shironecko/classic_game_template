@@ -5,11 +5,6 @@
 
 namespace cgt::render
 {
-CameraSimpleOrtho::CameraSimpleOrtho(const Window& window)
-{
-    windowWidth = window.GetWidth();
-    windowHeight = window.GetHeight();
-}
 
 glm::mat4 CameraSimpleOrtho::GetView() const
 {
@@ -34,10 +29,10 @@ glm::mat4 CameraSimpleOrtho::GetProjection() const
     const float unitsPerPixel = 1.0f / pixelsPerUnit;
 
     const glm::mat4 projection = glm::ortho(
-        windowWidth * -0.5f * unitsPerPixel,
-        windowWidth * 0.5f * unitsPerPixel,
-        windowHeight * -0.5f * unitsPerPixel,
-        windowHeight * 0.5f * unitsPerPixel,
+        windowDimensions.x * -0.5f * unitsPerPixel,
+        windowDimensions.x * 0.5f * unitsPerPixel,
+        windowDimensions.y * -0.5f * unitsPerPixel,
+        windowDimensions.y * 0.5f * unitsPerPixel,
         0.0f,
         1.0f);
 
@@ -75,8 +70,8 @@ glm::vec2 CameraSimpleOrtho::ScreenToWorld(u32 screenX, u32 screenY) const
     const glm::mat4 vpInverse = glm::inverse(vp);
 
     const glm::vec2 ndc(
-        screenX / windowWidth * 2.0f - 1.0f,
-        (windowHeight - screenY) / windowHeight * 2.0f - 1.0f);
+        (float)screenX / windowDimensions.x * 2.0f - 1.0f,
+        (float)(windowDimensions.y - screenY) / windowDimensions.y * 2.0f - 1.0f);
 
     const glm::vec2 world =  vpInverse * glm::vec4(ndc, 0.0f, 1.0f);
 
@@ -88,7 +83,7 @@ glm::vec2 CameraSimpleOrtho::WorldToScreen(glm::vec2 world) const
     const glm::mat4 vp = GetViewProjection();
     const glm::vec2 ndc = vp * glm::vec4(world, 0.0f, 1.0f);
     const glm::vec2 normalizedScreen = (ndc + glm::vec2(1.0f)) * glm::vec2(0.5f);
-    const glm::vec2 screen(normalizedScreen.x * windowWidth, (1.0f - normalizedScreen.y) * windowHeight);
+    const glm::vec2 screen(normalizedScreen.x * windowDimensions.x, (1.0f - normalizedScreen.y) * windowDimensions.y);
 
     return screen;
 }

@@ -10,4 +10,5 @@
 #include <engine/imgui_helper.h>
 #include <engine/tileset_helper.h>
 #include <engine/input_helper.h>
+#include <engine/engine.h>
 #include <engine/math.h>

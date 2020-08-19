@@ -7,30 +7,19 @@
 
 namespace cgt
 {
-std::shared_ptr<ImGuiHelper> ImGuiHelper::Create(
-    std::shared_ptr<Window> window,
-    std::shared_ptr<render::IRenderContext> render
-)
-{
-    auto helper = std::shared_ptr<ImGuiHelper>(new ImGuiHelper(window, render));
-    return helper;
-}
-
-ImGuiHelper::ImGuiHelper(std::shared_ptr<Window> window, std::shared_ptr<render::IRenderContext> render)
-    : m_Window(std::move(window))
-    , m_Render(std::move(render))
+ImGuiHelper::ImGuiHelper(Window& window, render::IRenderContext& render)
 {
     ImGui::CreateContext();
 
     // TODO: is this the best way to do this?
 #ifdef WIN32
-    ImGui_ImplSDL2_InitForD3D(m_Window->GetSDLWindow());
+    ImGui_ImplSDL2_InitForD3D(window.GetSDLWindow());
 #else
 #error "Platform not supported!"
 #endif
 
-    m_Render->ImGuiBindingsInit();
-    m_Render->Im3dBindingsInit();
+    render.ImGuiBindingsInit();
+    render.Im3dBindingsInit();
 }
 
 void ImGuiHelper::RenderIm3dText(const render::ICamera& camera)
@@ -38,9 +27,6 @@ void ImGuiHelper::RenderIm3dText(const render::ICamera& camera)
     //
     // NOTE: what follows is more or less a literal translation of the text rendering function from Im3d examples
     //
-
-    const u32 viewportWidth = m_Window->GetWidth();
-    const u32 viewportHeight = m_Window->GetHeight();
 
     BeginInvisibleFullscreenWindow();
 
@@ -123,24 +109,23 @@ void ImGuiHelper::RenderIm3dText(const render::ICamera& camera)
     EndInvisibleFullscreenWindow();
 }
 
-ImGuiHelper::~ImGuiHelper()
+void ImGuiHelper::Shutdown(render::IRenderContext& render)
 {
-    m_Render->Im3dBindingsShutdown();
-    m_Render->ImGuiBindingsShutdown();
-
-    ImGui_ImplSDL2_Shutdown();
+    render.Im3dBindingsShutdown();
+    render.ImGuiBindingsShutdown();
 }
 
-void ImGuiHelper::NewFrame(float dt, const render::ICamera& camera)
+void ImGuiHelper::NewFrame(Window& window, render::IRenderContext& render, const render::ICamera& camera, float deltaTime)
 {
-    m_Render->ImGuiBindingsNewFrame();
-    ImGui_ImplSDL2_NewFrame(m_Window->GetSDLWindow());
+    m_WindowDimensions = window.GetDimensions();
+
+    render.ImGuiBindingsNewFrame();
+    ImGui_ImplSDL2_NewFrame(window.GetSDLWindow());
     ImGui::NewFrame();
 
     Im3d::AppData& ad = Im3d::GetAppData();
-
-    ad.m_deltaTime = dt;
-    ad.m_viewportSize = Im3d::Vec2((float)m_Window->GetWidth(), (float)m_Window->GetHeight());
+    ad.m_deltaTime = deltaTime;
+    ad.m_viewportSize = Im3d::Vec2(m_WindowDimensions.x, m_WindowDimensions.y);
     ad.m_viewOrigin = camera.GetPosition(); // for VR use the head position
     ad.m_viewDirection = camera.GetForwardDirection();
     ad.m_worldUp = camera.GetUpDirection(); // used internally for generating orthonormal bases
@@ -193,23 +178,21 @@ void ImGuiHelper::NewFrame(float dt, const render::ICamera& camera)
     Im3d::NewFrame();
 }
 
-void ImGuiHelper::RenderUi(const render::ICamera& camera)
+void ImGuiHelper::RenderUi(render::IRenderContext& render, const render::ICamera& camera, glm::uvec2 windowDimensions)
 {
-    m_Render->Im3dBindingsRender(camera);
+    render.Im3dBindingsRender(camera, windowDimensions);
     RenderIm3dText(camera);
 
     ImGui::Render();
-    m_Render->ImGuiBindingsRender(ImGui::GetDrawData());
+    render.ImGuiBindingsRender(ImGui::GetDrawData());
 }
 
 void ImGuiHelper::BeginInvisibleFullscreenWindow()
 {
-    const u32 viewportWidth = m_Window->GetWidth();
-    const u32 viewportHeight = m_Window->GetHeight();
-
+    auto& io = ImGui::GetIO();
     ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32_BLACK_TRANS);
-    ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-    ImGui::SetNextWindowSize(ImVec2((float)viewportWidth, (float)viewportHeight));
+    ImGui::SetNextWindowPos({ 0.0f, 0.0f });
+    ImGui::SetNextWindowSize(io.DisplaySize);
     ImGui::Begin(
         "Invisible",
         nullptr,
