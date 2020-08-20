@@ -49,7 +49,7 @@ Im3dDx11::Im3dDx11(ComPtr<ID3D11Device> device, ComPtr<ID3D11DeviceContext> cont
                 };
                 hresult = m_Device->CreateInputLayout(
                     desc,
-                    SDL_arraysize(desc),
+                    CGT_ARRAY_LENGTH(desc),
                     vsData->GetBufferPointer(),
                     vsData->GetBufferSize(),
                     m_InputLayout.GetAddressOf());

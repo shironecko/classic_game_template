@@ -27,6 +27,8 @@ typedef intptr_t ptrdiff;
 namespace cgt
 {
 
+#define CGT_ARRAY_LENGTH(staticArray) SDL_arraysize(staticArray)
+
 enum class PanicDialogResponse
 {
     DebugBreak,

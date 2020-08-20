@@ -14,7 +14,7 @@ PanicDialogResponse ShowPanicDialog(const char* message, const char* title)
     };
     SDL_MessageBoxData data {};
     data.buttons = buttons;
-    data.numbuttons = SDL_arraysize(buttons);
+    data.numbuttons = CGT_ARRAY_LENGTH(buttons);
     data.flags = SDL_MESSAGEBOX_ERROR;
     data.title = title;
     data.message = message;

@@ -43,7 +43,7 @@ cgt::IGame::ControlFlow Game::Update(cgt::Engine& engine, float deltaTime, bool 
         mouseWheelMotion = -1;
     }
     scaleFactorIdx -= mouseWheelMotion;
-    scaleFactorIdx = glm::clamp(scaleFactorIdx, 0, (i32)SDL_arraysize(SCALE_FACTORS) - 1);
+    scaleFactorIdx = glm::clamp(scaleFactorIdx, 0, (i32)CGT_ARRAY_LENGTH(SCALE_FACTORS) - 1);
 
 
     // NOTE: prone to "spiral of death"
@@ -150,7 +150,7 @@ cgt::IGame::ControlFlow Game::Update(cgt::Engine& engine, float deltaTime, bool 
     {
         ImGui::Begin("Gameplay Settings");
 
-        for (u32 i = 0; i < SDL_arraysize(DT_SCALE_FACTORS); ++i)
+        for (u32 i = 0; i < CGT_ARRAY_LENGTH(DT_SCALE_FACTORS); ++i)
         {
             if (ImGui::RadioButton(DT_SCALE_FACTORS_STR[i], i == selectedDtScaleIdx))
             {
