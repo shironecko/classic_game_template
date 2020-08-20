@@ -3,7 +3,13 @@
 namespace cgt
 {
 
-class Window : private NonCopyable
+enum class WindowEventControlFlow
+{
+    ConsumeEvent,
+    PassthroughEvent,
+};
+
+class Window final : private NonCopyable
 {
 public:
     Window(const char* title, glm::uvec2 dimensions);

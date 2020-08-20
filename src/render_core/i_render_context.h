@@ -38,9 +38,9 @@ public:
     virtual ~IRenderContext() = default;
 
 protected:
-    friend class ImGuiHelper;
+    friend class UIBindings;
 
-    virtual void ImGuiBindingsInit() = 0;
+    virtual void ImGuiBindingsInit(SDL_Window* window) = 0;
     virtual void ImGuiBindingsNewFrame() = 0;
     virtual void ImGuiBindingsRender(ImDrawData* drawData) = 0;
     virtual void ImGuiBindingsShutdown() = 0;

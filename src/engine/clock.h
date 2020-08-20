@@ -3,14 +3,15 @@
 namespace cgt
 {
 
-class Clock {
+class Clock final
+{
 public:
     Clock();
 
     float Tick();
 
 private:
-    uint64_t m_Last;
+    u64 m_Last;
 };
 
 }

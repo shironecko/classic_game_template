@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/event_loop.h>
+#include <engine/window.h>
 
 namespace cgt
 {
@@ -137,18 +137,20 @@ enum class KeyCode
     Count
 };
 
-class InputHelper : public IEventListener
+class Input final
 {
 public:
+    static void Initialize();
+
     enum class InputProcessingMode
     {
         Passthrough,
         Consume,
     };
 
-    InputHelper(InputProcessingMode mode);
+    Input(InputProcessingMode mode = InputProcessingMode::Consume);
 
-    EventAction OnEvent(const SDL_Event& event) override;
+    WindowEventControlFlow ProcessWindowEvent(const SDL_Event& event);
 
     void NewFrame();
 
@@ -175,9 +177,7 @@ private:
     KeysBitset m_Released;
     KeysBitset m_Held;
 
-
-    // FIXME: should probably be static
-    ScancodeMappings m_ScancodeMappings;
+    static ScancodeMappings s_ScancodeMappings;
 };
 
 }

@@ -1,15 +1,13 @@
 #pragma once
 
-#include <render_core/i_render_context.h>
+#include <render_core/sprite_draw_list.h>
 
 namespace cgt
 {
 
 class Engine;
 
-namespace render { class IRenderContext; }
-
-class TilesetHelper
+class TilesetHelper final
 {
 public:
     static std::unique_ptr<TilesetHelper> LoadMapTilesets(tson::Map& map, const std::filesystem::path& baseMapAbsPath, Engine& engine);

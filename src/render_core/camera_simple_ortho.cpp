@@ -59,11 +59,6 @@ glm::vec3 CameraSimpleOrtho::GetUpDirection() const
     return glm::vec3(0.0f, 1.0f, 0.0f);
 }
 
-bool CameraSimpleOrtho::IsOrthographic() const
-{
-    return true;
-}
-
 glm::vec2 CameraSimpleOrtho::ScreenToWorld(u32 screenX, u32 screenY) const
 {
     const glm::mat4 vp = GetViewProjection();

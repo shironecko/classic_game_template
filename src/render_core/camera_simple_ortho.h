@@ -23,8 +23,6 @@ public:
     glm::vec2 ScreenToWorld(u32 screenX, u32 screenY) const override;
     glm::vec2 WorldToScreen(glm::vec2 world) const override;
 
-    bool IsOrthographic() const override;
-
     float pixelsPerUnit = 1.0f;
     bool snapToPixel = true;
 

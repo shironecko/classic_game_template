@@ -34,7 +34,7 @@ public:
     void Present() override;
 
 protected:
-    void ImGuiBindingsInit() override;
+    void ImGuiBindingsInit(SDL_Window* window) override;
     void ImGuiBindingsNewFrame() override;
     void ImGuiBindingsRender(ImDrawData* drawData) override;
     void ImGuiBindingsShutdown() override;

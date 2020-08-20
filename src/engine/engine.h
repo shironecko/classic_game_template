@@ -1,11 +1,9 @@
 #pragma once
 
 #include <engine/window.h>
-#include <engine/input_helper.h>
-#include <engine/event_loop.h>
-#include <engine/imgui_helper.h>
-
-#include <render_core/i_render_context.h>
+#include <engine/input.h>
+#include <engine/ui_bindings.h>
+#include <render_core/sprite_draw_list.h>
 
 namespace cgt
 {
@@ -16,7 +14,7 @@ class IRenderContext;
 }
 
 class Window;
-class InputHelper;
+class Input;
 
 class Engine;
 
@@ -53,20 +51,19 @@ public:
 
     glm::uvec2 GetWindowDimensions() { return m_Window.GetDimensions(); }
 
-    render::TextureHandle LoadTexture(const std::filesystem::path& absolutePath) { return m_Render->LoadTexture(absolutePath); }
-    ImTextureID GetImGuiTextureID(const render::TextureHandle& texture) { return m_Render->GetImTextureID(texture); }
-    void RenderSprites(render::SpriteDrawList& sprites, bool sortBeforeRendering = true) { m_Render->Submit(sprites, m_Game->GetMainCamera(), m_Window.GetDimensions(), sortBeforeRendering); }
+    render::TextureHandle LoadTexture(const std::filesystem::path& absolutePath);
+    ImTextureID GetImGuiTextureID(const render::TextureHandle& texture);
+    void RenderSprites(render::SpriteDrawList& sprites, bool sortBeforeRendering = true);
 
-    InputHelper& GetInput() { return m_Input; }
+    Input& GetInput() { return m_Input; }
 
 private:
     void RunInternal();
 
     Window m_Window;
     std::unique_ptr<render::IRenderContext> m_Render;
-    ImGuiHelper m_Ui;
-    InputHelper m_Input;
-    std::unique_ptr<render::ICamera> m_MainCamera;
+    UIBindings m_Ui;
+    Input m_Input;
     std::unique_ptr<IGame> m_Game;
 };
 

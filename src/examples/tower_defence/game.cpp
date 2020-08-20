@@ -1,7 +1,6 @@
 #include <examples/tower_defence/pch.h>
 
 #include <examples/tower_defence/game.h>
-#include <examples/tower_defence/helper_functions.h>
 
 void Game::Initialize(cgt::Engine& engine)
 {
@@ -268,7 +267,7 @@ cgt::IGame::ControlFlow Game::Update(cgt::Engine& engine, float deltaTime, bool 
         ImGui::End();
     }
 
-    cgt::ImGuiHelper::BeginInvisibleFullscreenWindow();
+    cgt::ui::ImGuiBeginInvisibleFullscreenWindow();
     m_InterpolatedState.ForEachEnemy(m_GameSession->mapData, [&](auto& enemy, auto& type) {
         auto& enemyType = m_GameSession->mapData.enemyTypes[enemy.typeIdx];
 
@@ -288,7 +287,7 @@ cgt::IGame::ControlFlow Game::Update(cgt::Engine& engine, float deltaTime, bool 
         ImGui::ProgressBar(enemy.remainingHealth / enemyType.maxHealth, { screenSize.x, screenSize.y } , "");
 
     });
-    cgt::ImGuiHelper::EndInvisibleFullscreenWindow();
+    cgt::ui::ImGuiEndInvisibleFullscreenWindow();
 
     m_GameSession->mapData.enemyPath.DebugRender();
 

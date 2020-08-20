@@ -10,7 +10,7 @@ Clock::Clock() {
 }
 
 float Clock::Tick() {
-    uint64_t now = SDL_GetPerformanceCounter();
+    u64 now = SDL_GetPerformanceCounter();
     float delta = float((now - m_Last) / (double)SDL_GetPerformanceFrequency());
     m_Last = now;
 

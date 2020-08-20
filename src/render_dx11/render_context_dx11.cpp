@@ -143,7 +143,7 @@ std::unique_ptr<RenderContextDX11> RenderContextDX11::Create(SDL_Window* window)
 
     hresult = context->m_Device->CreateInputLayout(
         inputElementDesc,
-        SDL_arraysize(inputElementDesc),
+        CGT_ARRAY_LENGTH(inputElementDesc),
         vertexShaderBlob->GetBufferPointer(),
         vertexShaderBlob->GetBufferSize(),
         context->m_InputLayout.GetAddressOf());
@@ -248,7 +248,7 @@ RenderStats RenderContextDX11::Submit(SpriteDrawList& drawList, const ICamera& c
                 m_QuadUV.Get(),
                 m_SpriteInstanceData.Get(),
             };
-        m_Context->IASetVertexBuffers(0, SDL_arraysize(buffers), buffers, strides, offsets);
+        m_Context->IASetVertexBuffers(0, CGT_ARRAY_LENGTH(buffers), buffers, strides, offsets);
 
         m_Context->GSSetShader(nullptr, nullptr, 0);
 
@@ -347,8 +347,9 @@ void RenderContextDX11::Present()
     FrameMark; // notify Tracy Profiler that the frame was rendered
 }
 
-void RenderContextDX11::ImGuiBindingsInit()
+void RenderContextDX11::ImGuiBindingsInit(SDL_Window* window)
 {
+    ImGui_ImplSDL2_InitForD3D(window);
     ImGui_ImplDX11_Init(m_Device.Get(), m_Context.Get());
 }
 

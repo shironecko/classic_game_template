@@ -4,11 +4,11 @@ add_library(engine
     pch.cpp pch.h external_libs.h system.h
     assets.cpp assets.h
     clock.cpp clock.h
-    imgui_helper.cpp imgui_helper.h
+    ui_bindings.cpp ui_bindings.h
     math.cpp math.h
     api.h
     extern/tracy/TracyClient.cpp
-    extern/im3d/im3d.cpp tileset_helper.cpp tileset_helper.h event_loop.cpp event_loop.h input_helper.cpp input_helper.h engine.cpp engine.h system.cpp)
+    extern/im3d/im3d.cpp tileset_helper.cpp tileset_helper.h input.cpp input.h engine.cpp engine.h system.cpp ui_extensions.cpp ui_extensions.h)
 
 target_compile_definitions(engine
     PUBLIC

@@ -1,34 +1,33 @@
 #include <engine/pch.h>
 
-#include <engine/imgui_helper.h>
+#include <engine/ui_bindings.h>
 #include <engine/window.h>
+#include <engine/ui_extensions.h>
 #include <render_core/i_render_context.h>
 #include <render_core/i_camera.h>
 
 namespace cgt
 {
-ImGuiHelper::ImGuiHelper(Window& window, render::IRenderContext& render)
+
+UIBindings::UIBindings(Window& window, render::IRenderContext& render)
 {
+    ZoneScoped;
+
     ImGui::CreateContext();
 
-    // TODO: is this the best way to do this?
-#ifdef WIN32
-    ImGui_ImplSDL2_InitForD3D(window.GetSDLWindow());
-#else
-#error "Platform not supported!"
-#endif
-
-    render.ImGuiBindingsInit();
+    render.ImGuiBindingsInit(window.GetSDLWindow());
     render.Im3dBindingsInit();
 }
 
-void ImGuiHelper::RenderIm3dText(const render::ICamera& camera)
+void UIBindings::RenderIm3dText(const render::ICamera& camera)
 {
+    ZoneScoped;
+
     //
     // NOTE: what follows is more or less a literal translation of the text rendering function from Im3d examples
     //
 
-    BeginInvisibleFullscreenWindow();
+    ui::ImGuiBeginInvisibleFullscreenWindow();
 
     ImDrawList* imDrawList = ImGui::GetWindowDrawList();
     const glm::mat4 viewProj = camera.GetViewProjection();
@@ -106,34 +105,35 @@ void ImGuiHelper::RenderIm3dText(const render::ICamera& camera)
         }
     }
 
-    EndInvisibleFullscreenWindow();
+    ui::ImGuiEndInvisibleFullscreenWindow();
 }
 
-void ImGuiHelper::Shutdown(render::IRenderContext& render)
+void UIBindings::Shutdown(render::IRenderContext& render)
 {
+    ZoneScoped;
+
     render.Im3dBindingsShutdown();
     render.ImGuiBindingsShutdown();
 }
 
-void ImGuiHelper::NewFrame(Window& window, render::IRenderContext& render, const render::ICamera& camera, float deltaTime)
+void UIBindings::NewFrame(Window& window, render::IRenderContext& render, const render::ICamera& camera, float deltaTime)
 {
-    m_WindowDimensions = window.GetDimensions();
+    ZoneScoped;
 
     render.ImGuiBindingsNewFrame();
     ImGui_ImplSDL2_NewFrame(window.GetSDLWindow());
     ImGui::NewFrame();
 
+    glm::uvec2 windowDimensions = window.GetDimensions();
     Im3d::AppData& ad = Im3d::GetAppData();
     ad.m_deltaTime = deltaTime;
-    ad.m_viewportSize = Im3d::Vec2(m_WindowDimensions.x, m_WindowDimensions.y);
+    ad.m_viewportSize = { (float)windowDimensions.x, (float)windowDimensions.y };
     ad.m_viewOrigin = camera.GetPosition(); // for VR use the head position
     ad.m_viewDirection = camera.GetForwardDirection();
     ad.m_worldUp = camera.GetUpDirection(); // used internally for generating orthonormal bases
-    ad.m_projOrtho = camera.IsOrthographic();
+    ad.m_projOrtho = false; // orthographic projection is not supported
 
     // m_projScaleY controls how gizmos are scaled in world space to maintain a constant screen height
-    // TODO: support perspective projection?
-    CGT_ASSERT_ALWAYS_MSG(camera.IsOrthographic(), "Perspective projection is not supported!");
     ad.m_projScaleY = 2.0f / camera.GetProjection()[1][1]; // use far plane height for an ortho projection
 
     // World space cursor ray from mouse position; for VR this might be the position/orientation of the HMD or a tracked controller.
@@ -178,36 +178,18 @@ void ImGuiHelper::NewFrame(Window& window, render::IRenderContext& render, const
     Im3d::NewFrame();
 }
 
-void ImGuiHelper::RenderUi(render::IRenderContext& render, const render::ICamera& camera, glm::uvec2 windowDimensions)
+void UIBindings::RenderUi(Window& window, render::IRenderContext& render, const render::ICamera& camera)
 {
-    render.Im3dBindingsRender(camera, windowDimensions);
+    ZoneScoped;
+
+    render.Im3dBindingsRender(camera, window.GetDimensions());
     RenderIm3dText(camera);
 
     ImGui::Render();
     render.ImGuiBindingsRender(ImGui::GetDrawData());
 }
 
-void ImGuiHelper::BeginInvisibleFullscreenWindow()
-{
-    auto& io = ImGui::GetIO();
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32_BLACK_TRANS);
-    ImGui::SetNextWindowPos({ 0.0f, 0.0f });
-    ImGui::SetNextWindowSize(io.DisplaySize);
-    ImGui::Begin(
-        "Invisible",
-        nullptr,
-        0 | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar |
-        ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |
-        ImGuiWindowFlags_NoBringToFrontOnFocus);
-}
-
-void ImGuiHelper::EndInvisibleFullscreenWindow()
-{
-    ImGui::End();
-    ImGui::PopStyleColor(1);
-}
-
-IEventListener::EventAction ImGuiHelper::OnEvent(const SDL_Event& event)
+WindowEventControlFlow UIBindings::ProcessWindowEvent(const SDL_Event& event)
 {
     const bool isKeyboardEvent =
         event.type == SDL_KEYDOWN
@@ -226,8 +208,8 @@ IEventListener::EventAction ImGuiHelper::OnEvent(const SDL_Event& event)
     const bool imguiConsumedEvent = ImGui_ImplSDL2_ProcessEvent(&event);
 
     return (passMouseToImgui || passKeyboardToImgui) && imguiConsumedEvent
-       ? IEventListener::EventAction::Consume
-       : IEventListener::EventAction::Passthrough;
+       ? WindowEventControlFlow::ConsumeEvent
+       : WindowEventControlFlow::PassthroughEvent;
 }
 
 }

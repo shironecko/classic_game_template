@@ -4,11 +4,10 @@
 #include <engine/external_libs.h>
 
 #include <engine/window.h>
-#include <engine/event_loop.h>
 #include <engine/assets.h>
 #include <engine/clock.h>
-#include <engine/imgui_helper.h>
+#include <engine/ui_extensions.h>
 #include <engine/tileset_helper.h>
-#include <engine/input_helper.h>
+#include <engine/input.h>
 #include <engine/engine.h>
 #include <engine/math.h>
