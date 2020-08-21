@@ -4,6 +4,7 @@
 #include <engine/input.h>
 #include <engine/ui_bindings.h>
 #include <render_core/sprite_draw_list.h>
+#include <render_core/camera.h>
 
 namespace cgt
 {
@@ -31,8 +32,6 @@ public:
     virtual ControlFlow Update(Engine& engine, float deltaTime, bool quitRequestedByUser) = 0;
     virtual void Shutdown(Engine& engine) = 0;
 
-    virtual render::ICamera& GetMainCamera() = 0;
-
     virtual ~IGame() = default;
 };
 
@@ -56,6 +55,7 @@ public:
     void RenderSprites(render::SpriteDrawList& sprites, bool sortBeforeRendering = true);
 
     Input& GetInput() { return m_Input; }
+    render::Camera& GetCamera() { return m_Camera; }
 
 private:
     void RunInternal();
@@ -64,6 +64,7 @@ private:
     std::unique_ptr<render::IRenderContext> m_Render;
     UIBindings m_Ui;
     Input m_Input;
+    render::Camera m_Camera;
     std::unique_ptr<IGame> m_Game;
 };
 

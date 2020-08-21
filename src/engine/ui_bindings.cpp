@@ -4,7 +4,7 @@
 #include <engine/window.h>
 #include <engine/ui_extensions.h>
 #include <render_core/i_render_context.h>
-#include <render_core/i_camera.h>
+#include <render_core/camera.h>
 
 namespace cgt
 {
@@ -19,7 +19,7 @@ UIBindings::UIBindings(Window& window, render::IRenderContext& render)
     render.Im3dBindingsInit();
 }
 
-void UIBindings::RenderIm3dText(const render::ICamera& camera)
+void UIBindings::RenderIm3dText(const render::Camera& camera)
 {
     ZoneScoped;
 
@@ -116,7 +116,7 @@ void UIBindings::Shutdown(render::IRenderContext& render)
     render.ImGuiBindingsShutdown();
 }
 
-void UIBindings::NewFrame(Window& window, render::IRenderContext& render, const render::ICamera& camera, float deltaTime)
+void UIBindings::NewFrame(Window& window, render::IRenderContext& render, const render::Camera& camera, float deltaTime)
 {
     ZoneScoped;
 
@@ -178,7 +178,7 @@ void UIBindings::NewFrame(Window& window, render::IRenderContext& render, const 
     Im3d::NewFrame();
 }
 
-void UIBindings::RenderUi(Window& window, render::IRenderContext& render, const render::ICamera& camera)
+void UIBindings::RenderUi(Window& window, render::IRenderContext& render, const render::Camera& camera)
 {
     ZoneScoped;
 

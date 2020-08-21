@@ -2,7 +2,7 @@
 
 #include <engine/window.h>
 #include <render_core/i_render_context.h>
-#include <render_core/i_camera.h>
+#include <render_core/camera.h>
 #include <DirectXTK/CommonStates.h>
 
 namespace cgt::render
@@ -30,7 +30,7 @@ public:
     usize GetTextureSortKey(const TextureHandle& texture) override;
 
     void Clear(glm::vec4 clearColor, glm::uvec2 windowDimensions) override;
-    RenderStats Submit(SpriteDrawList& drawList, const ICamera& camera, glm::uvec2 windowDimensions, bool sortBeforeRendering = true) override;
+    RenderStats Submit(SpriteDrawList& drawList, const Camera& camera, glm::uvec2 windowDimensions, bool sortBeforeRendering = true) override;
     void Present() override;
 
 protected:
@@ -41,7 +41,7 @@ protected:
 
     void Im3dBindingsInit() override;
     void Im3dBindingsNewFrame() override;
-    void Im3dBindingsRender(const ICamera& camera, glm::uvec2 windowDimensions) override;
+    void Im3dBindingsRender(const Camera& camera, glm::uvec2 windowDimensions) override;
     void Im3dBindingsShutdown() override;
 
 private:

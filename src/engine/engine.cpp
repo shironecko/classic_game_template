@@ -30,6 +30,7 @@ void Engine::RunInternal()
     {
         ZoneScopedN("Frame");
 
+        m_Camera.windowDimensions = m_Window.GetDimensions();
         m_Render->Clear({ 0.0f, 0.0f, 0.0f, 1.0f }, m_Window.GetDimensions());
 
         const float deltaTime = frameClock.Tick();
@@ -58,12 +59,11 @@ void Engine::RunInternal()
             }
         }
 
-        auto& mainCamera = m_Game->GetMainCamera();
-        m_Ui.NewFrame(m_Window, *m_Render, m_Game->GetMainCamera(), deltaTime);
+        m_Ui.NewFrame(m_Window, *m_Render, m_Camera, deltaTime);
 
         controlFlow = m_Game->Update(*this, deltaTime, quitRequested);
 
-        m_Ui.RenderUi(m_Window, *m_Render, m_Game->GetMainCamera());
+        m_Ui.RenderUi(m_Window, *m_Render, m_Camera);
         m_Render->Present();
     } while (controlFlow == IGame::ControlFlow::ContinueRunning);
 
@@ -85,7 +85,7 @@ ImTextureID Engine::GetImGuiTextureID(const render::TextureHandle& texture)
 
 void Engine::RenderSprites(render::SpriteDrawList& sprites, bool sortBeforeRendering)
 {
-    m_Render->Submit(sprites, m_Game->GetMainCamera(), m_Window.GetDimensions(), sortBeforeRendering);
+    m_Render->Submit(sprites, m_Camera, m_Window.GetDimensions(), sortBeforeRendering);
 }
 
 }

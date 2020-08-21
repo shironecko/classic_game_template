@@ -220,7 +220,7 @@ void RenderContextDX11::Clear(glm::vec4 clearColor, glm::uvec2 windowDimensions)
     m_Context->ClearRenderTargetView(m_RTView.Get(), &clearColor.x);
 }
 
-RenderStats RenderContextDX11::Submit(SpriteDrawList& drawList, const ICamera& camera, glm::uvec2 windowDimensions, bool sortBeforeRendering)
+RenderStats RenderContextDX11::Submit(SpriteDrawList& drawList, const Camera& camera, glm::uvec2 windowDimensions, bool sortBeforeRendering)
 {
     ZoneScoped;
 
@@ -376,7 +376,7 @@ void RenderContextDX11::Im3dBindingsInit()
 
 void RenderContextDX11::Im3dBindingsNewFrame() {}
 
-void RenderContextDX11::Im3dBindingsRender(const ICamera& camera, glm::uvec2 windowDimensions)
+void RenderContextDX11::Im3dBindingsRender(const Camera& camera, glm::uvec2 windowDimensions)
 {
     m_Im3dRender->Render(camera, windowDimensions.x, windowDimensions.y);
 }

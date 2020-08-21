@@ -4,16 +4,13 @@
 
 void Game::Initialize(cgt::Engine& engine)
 {
-    m_Camera.windowDimensions = engine.GetWindowDimensions();
-    m_Camera.pixelsPerUnit = 64.0f;
+    engine.GetCamera().pixelsPerUnit = 64.0f;
 
     m_GameSession = GameSession::FromMap(cgt::AssetPath("examples/maps/tower_defense.json"), engine, FIXED_DELTA);
 }
 
 cgt::IGame::ControlFlow Game::Update(cgt::Engine& engine, float deltaTime, bool quitRequestedByUser)
 {
-    m_Camera.windowDimensions = engine.GetWindowDimensions();
-
     const float basePPU = 64.0f;
     const float SCALE_FACTORS[] = { 4.0f, 3.0f, 2.0f, 1.0f, 1.0f / 2.0f, 1.0f / 3.0f, 1.0f / 4.0f, 1.0f / 5.0f, 1.0f / 6.0f, 1.0f / 7.0f, 1.0f / 8.0f, 1.0f / 9.0f, 1.0f / 10.0f };
     static i32 scaleFactorIdx = 3;
@@ -83,14 +80,14 @@ cgt::IGame::ControlFlow Game::Update(cgt::Engine& engine, float deltaTime, bool 
     if (cameraMovInputLengthSqr > 0.0f)
     {
         cameraMovInput /= glm::sqrt(cameraMovInputLengthSqr);
-        m_Camera.position += cameraMovInput * deltaTime * CAMERA_SPEED * (1.0f / SCALE_FACTORS[scaleFactorIdx]);
+        engine.GetCamera().position += cameraMovInput * deltaTime * CAMERA_SPEED * (1.0f / SCALE_FACTORS[scaleFactorIdx]);
     }
 
-    m_Camera.pixelsPerUnit = basePPU * SCALE_FACTORS[scaleFactorIdx];
+    engine.GetCamera().pixelsPerUnit = basePPU * SCALE_FACTORS[scaleFactorIdx];
 
 
     auto mouse = engine.GetInput().GetMousePosition();
-    glm::vec2 world = m_Camera.ScreenToWorld(mouse.x, mouse.y);
+    glm::vec2 world = engine.GetCamera().ScreenPointToWorld(mouse.x, mouse.y);
     auto tilePos = m_GameSession->mapData.buildableMap.WorldToTile(world);
     bool buildable = m_GameSession->mapData.buildableMap.Query(world);
 
@@ -280,10 +277,10 @@ cgt::IGame::ControlFlow Game::Update(cgt::Engine& engine, float deltaTime, bool 
         glm::vec2 hpOffset(-0.5f, 0.5f);
         glm::vec2 hpDim(1.0f, 0.2f);
 
-        glm::vec2 screenPosition = m_Camera.WorldToScreen(enemy.position + hpOffset);
+        glm::vec2 screenPosition = engine.GetCamera().WorldPointToScreen(enemy.position + hpOffset);
 
         ImGui::SetCursorPos({ screenPosition.x, screenPosition.y });
-        glm::vec2 screenSize = cgt::math::WorldToPixels(hpDim, m_Camera.pixelsPerUnit);
+        glm::vec2 screenSize = engine.GetCamera().WorldUnitsToPixels(hpDim);
         ImGui::ProgressBar(enemy.remainingHealth / enemyType.maxHealth, { screenSize.x, screenSize.y } , "");
 
     });

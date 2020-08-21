@@ -3,14 +3,14 @@
 namespace cgt::render
 {
 
-class ICamera;
+class Camera;
 
 class Im3dDx11
 {
 public:
     Im3dDx11(ComPtr<ID3D11Device> device, ComPtr<ID3D11DeviceContext> context);
 
-    void Render(const ICamera& camera, u32 viewportWidth, u32 viewportHeight);
+    void Render(const Camera& camera, u32 viewportWidth, u32 viewportHeight);
 
 private:
     struct ShaderSet

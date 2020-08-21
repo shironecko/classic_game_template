@@ -13,13 +13,9 @@ public:
     ControlFlow Update(cgt::Engine& engine, float deltaTime, bool quitRequestedByUser) override;
     void Shutdown(cgt::Engine& engine) override;
 
-    cgt::render::ICamera& GetMainCamera() override { return m_Camera; }
-
 private:
     // https://www.gafferongames.com/post/fix_your_timestep
     const float FIXED_DELTA = 1.0f / 30.0f;
-
-    cgt::render::CameraSimpleOrtho m_Camera;
 
     GameCommandQueue m_GameCommands;
     GameEventQueue m_GameEvents;

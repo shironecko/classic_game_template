@@ -69,37 +69,6 @@ inline bool AreNearlyEqAbsRel(float a, float b, float max_diff = DEFAULT_MAX_DIF
     return AreNearlyEqAbs(a, b, max_diff) || AreNearlyEqRel(a, b, max_rel_diff);
 }
 
-inline float WorldToPixels(float world, float pixelsPerUnit)
-{
-    const float pixels = world * pixelsPerUnit;
-    return pixels;
-}
-
-inline float PixelsToWorld(float pixels, float pixelsPerUnit)
-{
-    const float unitsPerPixel = 1.0f / pixelsPerUnit;
-    const float world = pixels * unitsPerPixel;
-    return world;
-}
-
-inline glm::vec2 WorldToPixels(glm::vec2 world, float pixelsPerUnit)
-{
-    const glm::vec2 pixels(
-        WorldToPixels(world.x, pixelsPerUnit),
-        WorldToPixels(world.y, pixelsPerUnit));
-
-    return pixels;
-}
-
-inline glm::vec2 PixelsToWorld(glm::vec2 pixels, float pixelsPerUnit)
-{
-    const glm::vec2 world(
-        PixelsToWorld(pixels.x, pixelsPerUnit),
-        PixelsToWorld(pixels.y, pixelsPerUnit));
-
-    return world;
-}
-
 struct AABB
 {
     static AABB FromPoints(glm::vec2 a, glm::vec2 b)

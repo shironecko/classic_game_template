@@ -6,8 +6,7 @@ class Game : public cgt::IGame
 public:
     void Initialize(cgt::Engine& engine) override
     {
-        m_Camera.windowDimensions = engine.GetWindowDimensions();
-        m_Camera.pixelsPerUnit = 16.0f;
+        engine.GetCamera().pixelsPerUnit = 16.0f;
     }
 
     ControlFlow Update(cgt::Engine& engine, float deltaTime, bool quitRequestedByUser) override
@@ -30,10 +29,7 @@ public:
 
     }
 
-    cgt::render::ICamera& GetMainCamera() override { return m_Camera; }
-
 private:
-    cgt::render::CameraSimpleOrtho m_Camera;
     cgt::render::SpriteDrawList m_Sprites;
 };
 

@@ -123,7 +123,7 @@ Im3dDx11::Im3dDx11(ComPtr<ID3D11Device> device, ComPtr<ID3D11DeviceContext> cont
         D3D11_CPU_ACCESS_WRITE);
 }
 
-void Im3dDx11::Render(const ICamera& camera, u32 viewportWidth, u32 viewportHeight)
+void Im3dDx11::Render(const Camera& camera, u32 viewportWidth, u32 viewportHeight)
 {
     Im3d::EndFrame();
 

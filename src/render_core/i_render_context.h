@@ -2,7 +2,7 @@
 
 #include <memory>
 #include <render_core/sprite_draw_list.h>
-#include <render_core/i_camera.h>
+#include <render_core/camera.h>
 
 namespace cgt::render
 {
@@ -32,7 +32,7 @@ public:
     virtual usize GetTextureSortKey(const TextureHandle& texture) = 0;
 
     virtual void Clear(glm::vec4 clearColor, glm::uvec2 windowDimensions) = 0;
-    virtual RenderStats Submit(SpriteDrawList& drawList, const ICamera& camera, glm::uvec2 windowDimensions, bool sortBeforeRendering = true) = 0;
+    virtual RenderStats Submit(SpriteDrawList& drawList, const Camera& camera, glm::uvec2 windowDimensions, bool sortBeforeRendering = true) = 0;
     virtual void Present() = 0;
 
     virtual ~IRenderContext() = default;
@@ -47,7 +47,7 @@ protected:
 
     virtual void Im3dBindingsInit() = 0;
     virtual void Im3dBindingsNewFrame() = 0;
-    virtual void Im3dBindingsRender(const ICamera& camera, glm::uvec2 windowDimensions) = 0;
+    virtual void Im3dBindingsRender(const Camera& camera, glm::uvec2 windowDimensions) = 0;
     virtual void Im3dBindingsShutdown() = 0;
 };
 

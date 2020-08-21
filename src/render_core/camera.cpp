@@ -1,12 +1,12 @@
 #include <render_core/pch.h>
 
-#include <render_core/camera_simple_ortho.h>
+#include <render_core/camera.h>
 #include <engine/window.h>
 
 namespace cgt::render
 {
 
-glm::mat4 CameraSimpleOrtho::GetView() const
+glm::mat4 Camera::GetView() const
 {
     const float unitsPerPixel = 1.0f / pixelsPerUnit;
     glm::vec2 snappedPosition = position;
@@ -24,7 +24,7 @@ glm::mat4 CameraSimpleOrtho::GetView() const
     return view;
 }
 
-glm::mat4 CameraSimpleOrtho::GetProjection() const
+glm::mat4 Camera::GetProjection() const
 {
     const float unitsPerPixel = 1.0f / pixelsPerUnit;
 
@@ -39,27 +39,27 @@ glm::mat4 CameraSimpleOrtho::GetProjection() const
     return projection;
 }
 
-glm::mat4 CameraSimpleOrtho::GetViewProjection() const
+glm::mat4 Camera::GetViewProjection() const
 {
     return GetProjection() * GetView();
 }
 
-glm::vec3 CameraSimpleOrtho::GetPosition() const
+glm::vec3 Camera::GetPosition() const
 {
     return glm::vec3(position, -1.0f);
 }
 
-glm::vec3 CameraSimpleOrtho::GetForwardDirection() const
+glm::vec3 Camera::GetForwardDirection() const
 {
     return glm::vec3(0.0f, 0.0f, 1.0f);
 }
 
-glm::vec3 CameraSimpleOrtho::GetUpDirection() const
+glm::vec3 Camera::GetUpDirection() const
 {
     return glm::vec3(0.0f, 1.0f, 0.0f);
 }
 
-glm::vec2 CameraSimpleOrtho::ScreenToWorld(u32 screenX, u32 screenY) const
+glm::vec2 Camera::ScreenPointToWorld(u32 screenX, u32 screenY) const
 {
     const glm::mat4 vp = GetViewProjection();
     const glm::mat4 vpInverse = glm::inverse(vp);
@@ -73,13 +73,38 @@ glm::vec2 CameraSimpleOrtho::ScreenToWorld(u32 screenX, u32 screenY) const
     return world;
 }
 
-glm::vec2 CameraSimpleOrtho::WorldToScreen(glm::vec2 world) const
+glm::vec2 Camera::WorldPointToScreen(glm::vec2 world) const
 {
     const glm::mat4 vp = GetViewProjection();
     const glm::vec2 ndc = vp * glm::vec4(world, 0.0f, 1.0f);
     const glm::vec2 normalizedScreen = (ndc + glm::vec2(1.0f)) * glm::vec2(0.5f);
     const glm::vec2 screen(normalizedScreen.x * windowDimensions.x, (1.0f - normalizedScreen.y) * windowDimensions.y);
 
+    return screen;
+}
+
+float Camera::PixelsToWorldUnits(float pixels) const
+{
+    const float unitsPerPixel = 1.0f / pixelsPerUnit;
+    const float world = pixels * unitsPerPixel;
+    return world;
+}
+
+float Camera::WorldUnitsToPixels(float worldUnits) const
+{
+    const float pixels = worldUnits * pixelsPerUnit;
+    return pixels;
+}
+
+glm::vec2 Camera::PixelsToWorldUnits(glm::vec2 pixels) const
+{
+    const glm::vec2 world = { PixelsToWorldUnits(pixels.x), PixelsToWorldUnits(pixels.y) };
+    return world;
+}
+
+glm::vec2 Camera::WorldUnitsToPixels(glm::vec2 worldUnits) const
+{
+    const glm::vec2 screen = { WorldUnitsToPixels(worldUnits.x), WorldUnitsToPixels(worldUnits.y) };
     return screen;
 }
 
