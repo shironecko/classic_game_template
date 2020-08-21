@@ -1,3 +1,5 @@
+add_subdirectory(render)
+
 add_library(engine
     engine_main.cpp
     window.cpp window.h
@@ -30,8 +32,6 @@ target_link_libraries(engine
         imgui::imgui
         glm
         render_core
-    PRIVATE
-        $<$<PLATFORM_ID:Windows>:render_dx11>
 )
 
 target_precompile_headers(engine PRIVATE pch.h)

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <render_core/i_render_context.h>
+#include <engine/render/core/i_render_context.h>
 
 #include <examples/tower_defence/map_data.h>
 #include <examples/tower_defence/game_state.h>

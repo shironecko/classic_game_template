@@ -3,8 +3,8 @@
 #include <engine/window.h>
 #include <engine/input.h>
 #include <engine/ui_bindings.h>
-#include <render_core/sprite_draw_list.h>
-#include <render_core/camera.h>
+#include <engine/render/core/sprite_draw_list.h>
+#include <engine/render/core/camera.h>
 
 namespace cgt
 {

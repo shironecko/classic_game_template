@@ -1,8 +1,8 @@
-#include <render_dx11/pch.h>
+#include <engine/render/dx11/pch.h>
 
-#include <render_dx11/render_context_dx11.h>
-#include <render_dx11/im3d_dx11.h>
-#include <render_dx11/util.h>
+#include <engine/render/dx11/render_context_dx11.h>
+#include <engine/render/dx11/im3d_dx11.h>
+#include <engine/render/dx11/util.h>
 #include <engine/assets.h>
 
 #include <SDL2/SDL_syswm.h>

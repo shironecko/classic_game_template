@@ -2,7 +2,7 @@
 
 #include <engine/engine.h>
 #include <engine/clock.h>
-#include <render_core/i_render_context.h>
+#include <engine/render/core/i_render_context.h>
 
 namespace cgt
 {

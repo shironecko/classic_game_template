@@ -1,10 +1,10 @@
 #pragma once
 
 #include <engine/api.h>
-#include <render_core/api.h>
-#include <render_core/missingno.png.h>
+#include <engine/render/core/api.h>
+#include <engine/render/core/missingno.png.h>
 
-#include <render_dx11/system.h>
+#include <engine/render/dx11/system.h>
 
 #include <d3d11.h>
 #include <dxgi.h>

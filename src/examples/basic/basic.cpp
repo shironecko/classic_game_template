@@ -1,5 +1,4 @@
 #include <engine/api.h>
-#include <render_core/api.h>
 
 class Game : public cgt::IGame
 {

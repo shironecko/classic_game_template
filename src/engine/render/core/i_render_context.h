@@ -1,8 +1,7 @@
 #pragma once
 
-#include <memory>
-#include <render_core/sprite_draw_list.h>
-#include <render_core/camera.h>
+#include <engine/render/core/sprite_draw_list.h>
+#include <engine/render/core/camera.h>
 
 namespace cgt::render
 {

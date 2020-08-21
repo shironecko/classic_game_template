@@ -1,7 +1,7 @@
-#include <render_core/pch.h>
+#include <engine/render/core/pch.h>
 
-#include <render_core/sprite_draw_list.h>
-#include <render_core/i_render_context.h>
+#include <engine/render/core/sprite_draw_list.h>
+#include <engine/render/core/i_render_context.h>
 
 namespace cgt::render
 {

@@ -11,3 +11,5 @@
 #include <engine/input.h>
 #include <engine/engine.h>
 #include <engine/math.h>
+
+#include <engine/render/core/api.h>

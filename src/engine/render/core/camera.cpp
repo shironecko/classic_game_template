@@ -1,6 +1,6 @@
-#include <render_core/pch.h>
+#include <engine/render/core/pch.h>
 
-#include <render_core/camera.h>
+#include <engine/render/core/camera.h>
 #include <engine/window.h>
 
 namespace cgt::render

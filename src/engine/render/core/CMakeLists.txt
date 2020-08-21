@@ -7,6 +7,8 @@ add_library(render_core
 
 target_link_libraries(render_core
     PUBLIC
-        engine)
+        engine
+    PRIVATE
+        render_backend)
 
 target_precompile_headers(render_core PRIVATE pch.h)

@@ -3,8 +3,8 @@
 #include <engine/ui_bindings.h>
 #include <engine/window.h>
 #include <engine/ui_extensions.h>
-#include <render_core/i_render_context.h>
-#include <render_core/camera.h>
+#include <engine/render/core/i_render_context.h>
+#include <engine/render/core/camera.h>
 
 namespace cgt
 {
