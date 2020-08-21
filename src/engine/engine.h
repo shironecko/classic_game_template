@@ -3,19 +3,13 @@
 #include <engine/window.h>
 #include <engine/input.h>
 #include <engine/ui_bindings.h>
+#include <engine/ui_extensions.h>
 #include <engine/render/core/sprite_draw_list.h>
 #include <engine/render/core/camera.h>
+#include <engine/render/core/i_render_context.h>
 
 namespace cgt
 {
-
-namespace render
-{
-class IRenderContext;
-}
-
-class Window;
-class Input;
 
 class Engine;
 
@@ -57,8 +51,14 @@ public:
     Input& GetInput() { return m_Input; }
     render::Camera& GetCamera() { return m_Camera; }
 
+
+    bool enableDebugShortcuts = true;
+    bool renderPerformanceStats = true;
+
 private:
     void RunInternal();
+
+    void RenderPerformanceStats();
 
     Window m_Window;
     std::unique_ptr<render::IRenderContext> m_Render;
@@ -66,6 +66,11 @@ private:
     Input m_Input;
     render::Camera m_Camera;
     std::unique_ptr<IGame> m_Game;
+
+    MetricsGuiMetric m_FrametimeMetric;
+    MetricsGuiPlot m_FrametimePlot;
+
+    render::RenderStats m_LastFrameStats;
 };
 
 }

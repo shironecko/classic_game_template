@@ -2,7 +2,6 @@
 
 #include <engine/engine.h>
 #include <engine/clock.h>
-#include <engine/render/core/i_render_context.h>
 
 namespace cgt
 {
@@ -12,7 +11,16 @@ Engine::Engine(const char* windowTitle, glm::uvec2 windowDimensions)
     , m_Render(render::IRenderContext::Create(m_Window.GetSDLWindow()))
     , m_Ui(m_Window, *m_Render)
     , m_Input(Input::InputProcessingMode::Consume)
+    , m_FrametimeMetric("Frame Time", "s", MetricsGuiMetric::USE_SI_UNIT_PREFIX | MetricsGuiMetric::KNOWN_MIN_VALUE)
 {
+    m_FrametimePlot.AddMetric(&m_FrametimeMetric);
+    m_FrametimePlot.mShowLegendColor = false;
+    m_FrametimePlot.mShowLegendAverage = true;
+    m_FrametimePlot.mShowLegendMin = false;
+    m_FrametimePlot.mMinValue = 0.0f;
+    m_FrametimePlot.mBarGraph = true;
+    m_FrametimePlot.mVBarGapWidth = 0;
+    m_FrametimePlot.mVBarMinWidth = 1;
 }
 
 void Engine::RunInternal()
@@ -59,17 +67,59 @@ void Engine::RunInternal()
             }
         }
 
+        if (enableDebugShortcuts && m_Input.IsKeyHeld(KeyCode::LeftAlt))
+        {
+            if (m_Input.IsKeyPressed(KeyCode::P))
+            {
+                renderPerformanceStats = !renderPerformanceStats;
+            }
+        }
+
         m_Ui.NewFrame(m_Window, *m_Render, m_Camera, deltaTime);
 
         controlFlow = m_Game->Update(*this, deltaTime, quitRequested);
 
+        m_FrametimeMetric.AddNewValue(deltaTime);
+        RenderPerformanceStats();
+
         m_Ui.RenderUi(m_Window, *m_Render, m_Camera);
-        m_Render->Present();
+        m_LastFrameStats = m_Render->Present();
     } while (controlFlow == IGame::ControlFlow::ContinueRunning);
 
     {
         ZoneScopedN("Game::Shutdown");
         m_Game->Shutdown(*this);
+    }
+}
+
+void Engine::RenderPerformanceStats()
+{
+    if (!renderPerformanceStats)
+    {
+        return;
+    }
+
+    ImGui::SetNextWindowSize({ 450, 150 }, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImGui::GetIO().DisplaySize, ImGuiCond_FirstUseEver, { 1, 1 });
+    if (ImGui::Begin("Performance", &renderPerformanceStats))
+    {
+        m_FrametimePlot.UpdateAxes();
+        m_FrametimePlot.DrawHistory();
+
+        ImGui::Separator();
+
+        ImGui::Columns(2);
+        ImGui::TextUnformatted("Sprites");
+        ImGui::NextColumn();
+        ImGui::Text("%u", m_LastFrameStats.spriteCount);
+
+        ImGui::NextColumn();
+        ImGui::TextUnformatted("Drawcalls");
+        ImGui::NextColumn();
+        ImGui::Text("%u", m_LastFrameStats.drawcallCount);
+        ImGui::Columns();
+
+        ImGui::End();
     }
 }
 

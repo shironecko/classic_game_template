@@ -16,3 +16,4 @@
 #include <engine/extern/tileson.hpp>
 #include <engine/extern/tracy/Tracy.hpp>
 #include <engine/extern/im3d/im3d.h>
+#include <engine/extern/metrics_gui/metrics_gui/include/metrics_gui/metrics_gui.h>

@@ -30,8 +30,8 @@ public:
     usize GetTextureSortKey(const TextureHandle& texture) override;
 
     void Clear(glm::vec4 clearColor, glm::uvec2 windowDimensions) override;
-    RenderStats Submit(SpriteDrawList& drawList, const Camera& camera, glm::uvec2 windowDimensions, bool sortBeforeRendering = true) override;
-    void Present() override;
+    void Submit(SpriteDrawList& drawList, const Camera& camera, glm::uvec2 windowDimensions, bool sortBeforeRendering = true) override;
+    RenderStats Present() override;
 
 protected:
     void ImGuiBindingsInit(SDL_Window* window) override;
@@ -73,6 +73,8 @@ private:
     TextureData m_MissingTexture;
 
     std::unique_ptr<Im3dDx11> m_Im3dRender;
+
+    RenderStats m_Stats;
 };
 
 }

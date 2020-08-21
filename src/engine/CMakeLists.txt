@@ -3,14 +3,20 @@ add_subdirectory(render)
 add_library(engine
     engine_main.cpp
     window.cpp window.h
-    pch.cpp pch.h external_libs.h system.h
+    pch.cpp pch.h external_libs.h
+    system.cpp system.h
     assets.cpp assets.h
     clock.cpp clock.h
     ui_bindings.cpp ui_bindings.h
     math.cpp math.h
+    tileset_helper.cpp tileset_helper.h
+    engine.cpp engine.h
+    input.cpp input.h
+    ui_extensions.cpp ui_extensions.h
     api.h
     extern/tracy/TracyClient.cpp
-    extern/im3d/im3d.cpp tileset_helper.cpp tileset_helper.h input.cpp input.h engine.cpp engine.h system.cpp ui_extensions.cpp ui_extensions.h)
+    extern/im3d/im3d.cpp
+    extern/metrics_gui/metrics_gui/source/metrics_gui.cpp)
 
 target_compile_definitions(engine
     PUBLIC

@@ -220,14 +220,13 @@ void RenderContextDX11::Clear(glm::vec4 clearColor, glm::uvec2 windowDimensions)
     m_Context->ClearRenderTargetView(m_RTView.Get(), &clearColor.x);
 }
 
-RenderStats RenderContextDX11::Submit(SpriteDrawList& drawList, const Camera& camera, glm::uvec2 windowDimensions, bool sortBeforeRendering)
+void RenderContextDX11::Submit(SpriteDrawList& drawList, const Camera& camera, glm::uvec2 windowDimensions, bool sortBeforeRendering)
 {
     ZoneScoped;
 
-    RenderStats stats {};
     {
         ZoneScopedN("Setup");
-        stats.spriteCount = drawList.size();
+        m_Stats.spriteCount += drawList.size();
 
         SetUpRenderTarget(windowDimensions);
 
@@ -312,12 +311,9 @@ RenderStats RenderContextDX11::Submit(SpriteDrawList& drawList, const Camera& ca
 
         m_Context->Unmap(m_SpriteInstanceData.Get(), 0);
 
-        ++stats.drawcallCount;
+        ++m_Stats.drawcallCount;
         m_Context->DrawIndexedInstanced(6, spritesInBatch, 0, 0, 0);
     }
-
-
-    return stats;
 }
 
 void RenderContextDX11::SetUpRenderTarget(glm::uvec2 windowDimensions)
@@ -337,14 +333,18 @@ void RenderContextDX11::SetUpRenderTarget(glm::uvec2 windowDimensions)
     m_Context->OMSetRenderTargets(1, m_RTView.GetAddressOf(), nullptr);
 }
 
-void RenderContextDX11::Present()
+RenderStats RenderContextDX11::Present()
 {
     {
         ZoneScoped;
         m_Swapchain->Present(0, 0);
     }
 
+    RenderStats stats = m_Stats;
+    m_Stats.Reset();
+
     FrameMark; // notify Tracy Profiler that the frame was rendered
+    return stats;
 }
 
 void RenderContextDX11::ImGuiBindingsInit(SDL_Window* window)

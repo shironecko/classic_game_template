@@ -10,12 +10,6 @@ struct RenderStats
 {
     void Reset() { spriteCount = 0; drawcallCount = 0; }
 
-    void operator+=(const RenderStats& other)
-    {
-        spriteCount += other.spriteCount;
-        drawcallCount += other.drawcallCount;
-    }
-
     u32 spriteCount = 0;
     u32 drawcallCount = 0;
 };
@@ -31,8 +25,8 @@ public:
     virtual usize GetTextureSortKey(const TextureHandle& texture) = 0;
 
     virtual void Clear(glm::vec4 clearColor, glm::uvec2 windowDimensions) = 0;
-    virtual RenderStats Submit(SpriteDrawList& drawList, const Camera& camera, glm::uvec2 windowDimensions, bool sortBeforeRendering = true) = 0;
-    virtual void Present() = 0;
+    virtual void Submit(SpriteDrawList& drawList, const Camera& camera, glm::uvec2 windowDimensions, bool sortBeforeRendering = true) = 0;
+    virtual RenderStats Present() = 0;
 
     virtual ~IRenderContext() = default;
 
