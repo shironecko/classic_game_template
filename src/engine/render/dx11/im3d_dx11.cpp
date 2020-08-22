@@ -10,6 +10,8 @@ Im3dDx11::Im3dDx11(ComPtr<ID3D11Device> device, ComPtr<ID3D11DeviceContext> cont
     , m_Context(std::move(context))
     , m_VertexBufferSize(0)
 {
+    ZoneScoped;
+
     const char* shaderTypes[] = { "VERTEX_SHADER", "GEOMETRY_SHADER", "PIXEL_SHADER", };
     const char* primitiveTypes[Im3d::DrawPrimitive_Count];
     primitiveTypes[Im3d::DrawPrimitive_Points] = "POINTS";
@@ -125,6 +127,8 @@ Im3dDx11::Im3dDx11(ComPtr<ID3D11Device> device, ComPtr<ID3D11DeviceContext> cont
 
 void Im3dDx11::Render(const Camera& camera, u32 viewportWidth, u32 viewportHeight)
 {
+    ZoneScoped;
+
     Im3d::EndFrame();
 
     Im3d::AppData& ad = Im3d::GetAppData();
@@ -204,4 +208,5 @@ void Im3dDx11::Render(const Camera& camera, u32 viewportWidth, u32 viewportHeigh
     m_Context->GSSetShader(nullptr, nullptr, 0);
     m_Context->PSSetShader(nullptr, nullptr, 0);
 }
+
 }

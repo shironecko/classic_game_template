@@ -44,24 +44,27 @@ void Engine::RunInternal()
 
         SDL_Event event;
         bool quitRequested = false;
-        while (m_Window.PollEvent(event))
         {
-            if (m_Ui.ProcessWindowEvent(event) == WindowEventControlFlow::ConsumeEvent)
+            ZoneScopedN("Event Processing");
+            while (m_Window.PollEvent(event))
             {
-                // input is event based so we need to reset it if ImGui suddenly starts to capture events
-                // lest we get "sticky keys" bug
-                m_Input.Reset();
-                continue;
-            }
+                if (m_Ui.ProcessWindowEvent(event) == WindowEventControlFlow::ConsumeEvent)
+                {
+                    // input is event based so we need to reset it if ImGui suddenly starts to capture events
+                    // lest we get "sticky keys" bug
+                    m_Input.Reset();
+                    continue;
+                }
 
-            if (m_Input.ProcessWindowEvent(event) == WindowEventControlFlow::ConsumeEvent)
-            {
-                continue;
-            }
+                if (m_Input.ProcessWindowEvent(event) == WindowEventControlFlow::ConsumeEvent)
+                {
+                    continue;
+                }
 
-            if (event.type == SDL_QUIT)
-            {
-                quitRequested = true;
+                if (event.type == SDL_QUIT)
+                {
+                    quitRequested = true;
+                }
             }
         }
 
@@ -75,13 +78,22 @@ void Engine::RunInternal()
 
         m_Ui.NewFrame(m_Window, *m_Render, m_Camera, deltaTime);
 
-        controlFlow = m_Game->Update(*this, deltaTime, quitRequested);
+        {
+            ZoneScopedN("Game::Update");
+            controlFlow = m_Game->Update(*this, deltaTime, quitRequested);
+        }
 
-        m_FrametimeMetric.AddNewValue(deltaTime);
-        RenderPerformanceStats();
+        {
+            ZoneScopedN("Debug UI");
+            m_FrametimeMetric.AddNewValue(deltaTime);
+            RenderPerformanceStats();
+        }
 
         m_Ui.RenderUi(m_Window, *m_Render, m_Camera);
         m_LastFrameStats = m_Render->Present();
+
+        TracyPlot("Sprites", (i64)m_LastFrameStats.spriteCount);
+        TracyPlot("Drawcalls", (i64)m_LastFrameStats.drawcallCount);
     } while (controlFlow == IGame::ControlFlow::ContinueRunning);
 
     {

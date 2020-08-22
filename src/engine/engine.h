@@ -29,19 +29,12 @@ public:
     virtual ~IGame() = default;
 };
 
+template<class TGame>
+void RunGame(const char* windowTitle = "Classic Game Template", glm::uvec2 windowDimensions = { 1280, 720 });
+
 class Engine final
 {
 public:
-    Engine(const char* windowTitle = "Classic Game Template", glm::uvec2 windowDimensions = { 1280, 720 });
-
-    template<class TGame>
-    void Run()
-    {
-        m_Game = std::make_unique<TGame>();
-        RunInternal();
-        m_Game.reset();
-    }
-
     glm::uvec2 GetWindowDimensions() { return m_Window.GetDimensions(); }
 
     render::TextureHandle LoadTexture(const std::filesystem::path& absolutePath);
@@ -51,11 +44,15 @@ public:
     Input& GetInput() { return m_Input; }
     render::Camera& GetCamera() { return m_Camera; }
 
-
     bool enableDebugShortcuts = true;
     bool renderPerformanceStats = true;
 
 private:
+    template<class TGame>
+    friend void RunGame(const char*, glm::uvec2);
+
+    Engine(const char* windowTitle, glm::uvec2 windowDimensions);
+
     void RunInternal();
 
     void RenderPerformanceStats();
@@ -72,5 +69,32 @@ private:
 
     render::RenderStats m_LastFrameStats;
 };
+
+template<class TGame>
+void RunGame(const char* windowTitle, glm::uvec2 windowDimensions)
+{
+    std::unique_ptr<Engine> engine;
+    {
+        ZoneScopedN("Engine Construction");
+        engine = std::unique_ptr<Engine>(new Engine(windowTitle, windowDimensions));
+    }
+
+    {
+        ZoneScopedN("Game Construction");
+        engine->m_Game = std::make_unique<TGame>();
+    }
+
+    engine->RunInternal();
+
+    {
+        ZoneScopedN("Game Destruction");
+        engine->m_Game.reset();
+    }
+
+    {
+        ZoneScopedN("Engine Destruction");
+        engine.reset();
+    }
+}
 
 }

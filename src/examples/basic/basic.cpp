@@ -34,8 +34,7 @@ private:
 
 int GameMain()
 {
-    cgt::Engine engine;
-    engine.Run<Game>();
+    cgt::RunGame<Game>();
 
     return 0;
 }

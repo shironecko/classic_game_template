@@ -54,6 +54,8 @@ std::filesystem::path AssetPath(const std::filesystem::path& relativePath)
 
 std::vector<u8> LoadFileBytes(const std::filesystem::path& absolutePath)
 {
+    ZoneScoped;
+
     CGT_ASSERT(absolutePath.is_absolute());
 
     std::ifstream stream(absolutePath, std::ios::in | std::ios::binary);

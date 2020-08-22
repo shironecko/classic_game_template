@@ -9,6 +9,8 @@ namespace cgt::render
 ComPtr<ID3D10Blob>
 CompileShader(const std::filesystem::path& absolutePath, const char* entryPoint, const char* profile, const D3D_SHADER_MACRO* defines)
 {
+    ZoneScoped;
+
     CGT_ASSERT(entryPoint && profile);
 
     auto shaderData = LoadFileBytes(absolutePath);

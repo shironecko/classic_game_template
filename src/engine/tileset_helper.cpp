@@ -9,6 +9,8 @@ namespace cgt
 
 void TilesetHelper::Tileset::Load(tson::Map& map, const tson::Tileset& tileset, cgt::render::TextureHandle texture, Tileset& outTileset)
 {
+    ZoneScoped;
+
     outTileset.m_Texture = std::move(texture);
 
     outTileset.m_TextureWidth = tileset.getImageSize().x;
@@ -70,6 +72,8 @@ std::unique_ptr<TilesetHelper> TilesetHelper::LoadMapTilesets(tson::Map& map, co
 
 TilesetHelper::TilesetHelper(tson::Map& map, const std::filesystem::path& baseMapAbsPath, Engine& engine)
 {
+    ZoneScoped;
+
     for (auto& tileset : map.getTilesets())
     {
         auto texturePath = baseMapAbsPath / tileset.getImagePath();
@@ -96,6 +100,8 @@ bool TilesetHelper::GetTileSpriteSrc(u32 tileIdx, render::SpriteSource& outSrc) 
 
 void TilesetHelper::RenderTileLayers(tson::Map& map, cgt::render::SpriteDrawList& outDrawList, u8 baseSpriteLayer) const
 {
+    ZoneScoped;
+
     u8 spriteLayer = baseSpriteLayer;
     for (auto& mapLayer : map.getLayers())
     {
@@ -111,6 +117,8 @@ void TilesetHelper::RenderTileLayers(tson::Map& map, cgt::render::SpriteDrawList
 
 void TilesetHelper::RenderTileLayer(tson::Layer& layer, cgt::render::SpriteDrawList& outDrawList, u8 spriteLayer) const
 {
+    ZoneScoped;
+
     CGT_ASSERT(layer.getType() == tson::LayerType::TileLayer);
 
     for (auto& [pos, tile] : layer.getTileData())

@@ -30,6 +30,8 @@ std::unique_ptr<IRenderContext> IRenderContext::Create(SDL_Window* window)
 
 std::unique_ptr<RenderContextDX11> RenderContextDX11::Create(SDL_Window* window)
 {
+    ZoneScoped;
+
     auto context = std::unique_ptr<RenderContextDX11>(new RenderContextDX11());
 
     UINT deviceFlags = 0;
@@ -318,8 +320,6 @@ void RenderContextDX11::Submit(SpriteDrawList& drawList, const Camera& camera, g
 
 void RenderContextDX11::SetUpRenderTarget(glm::uvec2 windowDimensions)
 {
-    ZoneScoped;
-
     D3D11_VIEWPORT viewport {};
     viewport.TopLeftX = 0.0f;
     viewport.TopLeftY = 0.0f;
@@ -349,23 +349,30 @@ RenderStats RenderContextDX11::Present()
 
 void RenderContextDX11::ImGuiBindingsInit(SDL_Window* window)
 {
+    ZoneScoped;
+
     ImGui_ImplSDL2_InitForD3D(window);
     ImGui_ImplDX11_Init(m_Device.Get(), m_Context.Get());
 }
 
 void RenderContextDX11::ImGuiBindingsNewFrame()
 {
+    ZoneScoped;
+
     ImGui_ImplDX11_NewFrame();
 }
 
 void RenderContextDX11::ImGuiBindingsRender(ImDrawData* drawData)
 {
     ZoneScoped;
+
     ImGui_ImplDX11_RenderDrawData(drawData);
 }
 
 void RenderContextDX11::ImGuiBindingsShutdown()
 {
+    ZoneScoped;
+
     ImGui_ImplDX11_Shutdown();
 }
 
@@ -388,6 +395,8 @@ void RenderContextDX11::Im3dBindingsShutdown()
 
 TextureHandle RenderContextDX11::LoadTexture(const std::filesystem::path& absolutePath)
 {
+    ZoneScoped;
+
     auto fileData = LoadFileBytes(absolutePath);
     auto newTexture = std::shared_ptr<TextureData>(new TextureData());
     HRESULT hresult = LoadTextureFromMemory(fileData.data(), fileData.size(), *newTexture);
