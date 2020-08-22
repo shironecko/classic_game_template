@@ -4,5 +4,5 @@ This repository is meant as a starting point for developing classic games like S
 ## Getting Started
 
 1. Set up [vcpkg](https://github.com/Microsoft/vcpkg)
-2. Install these packages: ```sdl2 imgui[bindings] glm fmt DirectXTK tmx```
+2. Install these packages: ```sdl2 sdl2-image sdl2-mixer imgui[bindings] glm fmt```
 3. You should be ready to go!
