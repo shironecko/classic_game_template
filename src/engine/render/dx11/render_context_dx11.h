@@ -57,12 +57,15 @@ private:
     ComPtr<IDXGISwapChain> m_Swapchain;
     ComPtr<ID3D11RenderTargetView> m_RTView;
 
-    std::unique_ptr<DirectX::CommonStates> m_CommonStates;
-
     ComPtr<ID3D11VertexShader> m_VertexShader;
     ComPtr<ID3D11PixelShader> m_PixelShader;
     ComPtr<ID3D11InputLayout> m_InputLayout;
     ComPtr<ID3D11Buffer> m_FrameConstants;
+
+    ComPtr<ID3D11BlendState> m_BlendState;
+    ComPtr<ID3D11SamplerState> m_Sampler;
+    ComPtr<ID3D11DepthStencilState> m_DepthStencil;
+    ComPtr<ID3D11RasterizerState> m_Rasterizer;
 
     ComPtr<ID3D11Buffer> m_QuadVertices;
     ComPtr<ID3D11Buffer> m_QuadUV;

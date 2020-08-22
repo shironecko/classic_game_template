@@ -56,8 +56,6 @@ std::unique_ptr<RenderContextDX11> RenderContextDX11::Create(SDL_Window* window)
     hresult = context->LoadTextureFromMemory(MISSINGNO_PNG, sizeof(MISSINGNO_PNG), context->m_MissingTexture);
     CGT_CHECK_HRESULT(hresult, "Failed to create a stub missing texture!");
 
-    context->m_CommonStates = std::make_unique<DirectX::CommonStates>(context->m_Device.Get());
-
     ComPtr<IDXGIDevice> dxgiDevice;
     hresult = context->m_Device->QueryInterface(__uuidof(IDXGIDevice), (void**)dxgiDevice.GetAddressOf());
     CGT_CHECK_HRESULT(hresult, "Couldn't query for IDXGIDevice!");
@@ -128,6 +126,49 @@ std::unique_ptr<RenderContextDX11> RenderContextDX11::Create(SDL_Window* window)
         context->m_PixelShader.GetAddressOf());
     CGT_CHECK_HRESULT(hresult, "Failed to create pixel shader from bytecode!");
     DirectX::SetDebugObjectName(context->m_PixelShader.Get(), "Sprite PS");
+
+    D3D11_BLEND_DESC blendStateDesc {};
+    blendStateDesc.RenderTarget[0].BlendEnable = true;
+    blendStateDesc.RenderTarget[0].SrcBlend  = blendStateDesc.RenderTarget[0].SrcBlendAlpha  = D3D11_BLEND_SRC_ALPHA;
+    blendStateDesc.RenderTarget[0].DestBlend = blendStateDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+    blendStateDesc.RenderTarget[0].BlendOp   = blendStateDesc.RenderTarget[0].BlendOpAlpha   = D3D11_BLEND_OP_ADD;
+    blendStateDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+    hresult = context->m_Device->CreateBlendState(&blendStateDesc, context->m_BlendState.GetAddressOf());
+    CGT_CHECK_HRESULT(hresult, "Failed to create a blend state!");
+
+    D3D11_SAMPLER_DESC samplerDesc {};
+    samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samplerDesc.MaxAnisotropy = D3D11_MAX_MAXANISOTROPY;
+    samplerDesc.MaxLOD = FLT_MAX;
+    samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    hresult = context->m_Device->CreateSamplerState(&samplerDesc, context->m_Sampler.GetAddressOf());
+    CGT_CHECK_HRESULT(hresult, "Failed to create a sampler state!");
+
+    D3D11_DEPTH_STENCIL_DESC depthStencilDesc {};
+    depthStencilDesc.DepthEnable = FALSE;
+    depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+    depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+    depthStencilDesc.StencilEnable = FALSE;
+    depthStencilDesc.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
+    depthStencilDesc.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
+    depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+    depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+    depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+    depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+    depthStencilDesc.BackFace = depthStencilDesc.FrontFace;
+    hresult = context->m_Device->CreateDepthStencilState(&depthStencilDesc, context->m_DepthStencil.GetAddressOf());
+    CGT_CHECK_HRESULT(hresult, "Failed to create a depth-stencil state!");
+
+    D3D11_RASTERIZER_DESC rasterizerDesc = {};
+    rasterizerDesc.CullMode = D3D11_CULL_NONE;
+    rasterizerDesc.FillMode = D3D11_FILL_SOLID;
+    rasterizerDesc.DepthClipEnable = TRUE;
+    rasterizerDesc.MultisampleEnable = TRUE;
+    hresult = context->m_Device->CreateRasterizerState(&rasterizerDesc, context->m_Rasterizer.GetAddressOf());
+    CGT_CHECK_HRESULT(hresult, "Failed to create a rasterizer state!");
 
     const D3D11_INPUT_ELEMENT_DESC inputElementDesc[] =
         {
@@ -259,11 +300,10 @@ void RenderContextDX11::Submit(SpriteDrawList& drawList, const Camera& camera, g
         m_Context->VSSetConstantBuffers(0, 1, m_FrameConstants.GetAddressOf());
 
         m_Context->PSSetShader(m_PixelShader.Get(), nullptr, 0);
-        ID3D11SamplerState* sampler = m_CommonStates->PointClamp();
-        m_Context->PSSetSamplers(0, 1, &sampler);
+        m_Context->PSSetSamplers(0, 1, m_Sampler.GetAddressOf());
 
-        m_Context->OMSetBlendState(m_CommonStates->NonPremultiplied(), nullptr, 0xFFFFFFFF);
-        m_Context->OMSetDepthStencilState(m_CommonStates->DepthNone(), 0);
+        m_Context->OMSetBlendState(m_BlendState.Get(), nullptr, 0xFFFFFFFF);
+        m_Context->OMSetDepthStencilState(m_DepthStencil.Get(), 0);
     }
 
     if (sortBeforeRendering)
@@ -328,7 +368,7 @@ void RenderContextDX11::SetUpRenderTarget(glm::uvec2 windowDimensions)
     viewport.MinDepth = 0.0f;
     viewport.MaxDepth = 1.0f;
     m_Context->RSSetViewports(1, &viewport);
-    m_Context->RSSetState(m_CommonStates->CullNone());
+    m_Context->RSSetState(m_Rasterizer.Get());
 
     m_Context->OMSetRenderTargets(1, m_RTView.GetAddressOf(), nullptr);
 }
