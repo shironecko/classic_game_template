@@ -6,8 +6,6 @@
 #include <engine/assets.h>
 
 #include <SDL2/SDL_syswm.h>
-#include <DirectXTK/WICTextureLoader.h>
-#include <DirectXTK/DirectXHelpers.h>
 
 namespace cgt::render
 {
@@ -112,7 +110,6 @@ std::unique_ptr<RenderContextDX11> RenderContextDX11::Create(SDL_Window* window)
         nullptr,
         context->m_VertexShader.GetAddressOf());
     CGT_CHECK_HRESULT(hresult, "Failed to create vertex shader from bytecode!");
-    DirectX::SetDebugObjectName(context->m_VertexShader.Get(), "Sprite VS");
 
     ComPtr<ID3D10Blob> pixelShaderBlob = CompileShader(
         AssetPath("engine/shaders/dx11/sprites.hlsl"),
@@ -125,7 +122,6 @@ std::unique_ptr<RenderContextDX11> RenderContextDX11::Create(SDL_Window* window)
         nullptr,
         context->m_PixelShader.GetAddressOf());
     CGT_CHECK_HRESULT(hresult, "Failed to create pixel shader from bytecode!");
-    DirectX::SetDebugObjectName(context->m_PixelShader.Get(), "Sprite PS");
 
     D3D11_BLEND_DESC blendStateDesc {};
     blendStateDesc.RenderTarget[0].BlendEnable = true;
@@ -191,7 +187,6 @@ std::unique_ptr<RenderContextDX11> RenderContextDX11::Create(SDL_Window* window)
         vertexShaderBlob->GetBufferSize(),
         context->m_InputLayout.GetAddressOf());
     CGT_CHECK_HRESULT(hresult, "Failed to create shader input layout!");
-    DirectX::SetDebugObjectName(context->m_InputLayout.Get(), "Sprite VS Input Layout");
 
     const float quadVertices[] =
         {
@@ -205,7 +200,6 @@ std::unique_ptr<RenderContextDX11> RenderContextDX11::Create(SDL_Window* window)
         quadVertices,
         sizeof(quadVertices),
         D3D11_BIND_VERTEX_BUFFER);
-    DirectX::SetDebugObjectName(context->m_QuadVertices.Get(), "Quad Vertices");
 
     // centered around (0, 0) for scaling in a shader
     const float quadUVs[] =
@@ -220,7 +214,6 @@ std::unique_ptr<RenderContextDX11> RenderContextDX11::Create(SDL_Window* window)
         quadUVs,
         sizeof(quadUVs),
         D3D11_BIND_VERTEX_BUFFER);
-    DirectX::SetDebugObjectName(context->m_QuadUV.Get(), "Quad UVs");
 
     const u16 quadIdxs[] =
         {
@@ -232,7 +225,6 @@ std::unique_ptr<RenderContextDX11> RenderContextDX11::Create(SDL_Window* window)
         quadIdxs,
         sizeof(quadIdxs),
         D3D11_BIND_INDEX_BUFFER);
-    DirectX::SetDebugObjectName(context->m_QuadIndices.Get(), "Quad Indices");
 
     context->m_SpriteInstanceData = CreateBuffer(
         context->m_Device.Get(),
@@ -241,7 +233,6 @@ std::unique_ptr<RenderContextDX11> RenderContextDX11::Create(SDL_Window* window)
         D3D11_BIND_VERTEX_BUFFER,
         D3D11_USAGE_DYNAMIC,
         D3D11_CPU_ACCESS_WRITE);
-    DirectX::SetDebugObjectName(context->m_SpriteInstanceData.Get(), "Sprite Instance Data");
 
     context->m_FrameConstants = CreateBuffer(
         context->m_Device.Get(),
@@ -250,7 +241,6 @@ std::unique_ptr<RenderContextDX11> RenderContextDX11::Create(SDL_Window* window)
         D3D11_BIND_CONSTANT_BUFFER,
         D3D11_USAGE_DYNAMIC,
         D3D11_CPU_ACCESS_WRITE);
-    DirectX::SetDebugObjectName(context->m_FrameConstants.Get(), "Frame Constants");
 
     return context;
 }
@@ -447,13 +437,45 @@ TextureHandle RenderContextDX11::LoadTexture(const std::filesystem::path& absolu
 
 HRESULT RenderContextDX11::LoadTextureFromMemory(const u8* data, usize size, TextureData& outData)
 {
-    ComPtr<ID3D11Resource> textureResource;
-    HRESULT hresult = DirectX::CreateWICTextureFromMemory(
-        m_Device.Get(),
-        data,
-        size,
-        textureResource.GetAddressOf(),
-        outData.m_View.GetAddressOf());
+    SDL_Surface* rawImage = IMG_Load_RW(SDL_RWFromConstMem(data, size), 1);
+    if (rawImage->format->format != SDL_PIXELFORMAT_RGBA32)
+    {
+        ZoneScopedN("Convert Texture");
+
+        SDL_Surface* convertedSurface = SDL_ConvertSurfaceFormat(rawImage, SDL_PIXELFORMAT_RGBA32, 0);
+        SDL_FreeSurface(rawImage);
+        rawImage = convertedSurface;
+    }
+
+    D3D11_TEXTURE2D_DESC desc {};
+    desc.Width = rawImage->w;
+    desc.Height = rawImage->h;
+    desc.MipLevels = 1;
+    desc.ArraySize = 1;
+    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    desc.SampleDesc.Count = 1;
+    desc.Usage = D3D11_USAGE_DEFAULT;
+    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+    D3D11_SUBRESOURCE_DATA initData {};
+    initData.pSysMem = rawImage->pixels;
+    initData.SysMemPitch = rawImage->pitch;
+
+    ComPtr<ID3D11Texture2D> textureResource;
+    HRESULT hresult = m_Device->CreateTexture2D(&desc, &initData, textureResource.GetAddressOf());
+    SDL_FreeSurface(rawImage);
+
+    if (!SUCCEEDED(hresult))
+    {
+        return hresult;
+    }
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc {};
+    srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = 1;
+
+    hresult = m_Device->CreateShaderResourceView(textureResource.Get(), &srvDesc, outData.m_View.GetAddressOf());
 
     return hresult;
 }

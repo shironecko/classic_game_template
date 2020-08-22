@@ -30,13 +30,14 @@ target_compile_definitions(engine
 
 find_package(SDL2 CONFIG REQUIRED)
 find_package(SDL2-Mixer CONFIG REQUIRED)
+find_package(SDL2-Image CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 
 target_link_libraries(engine
     PUBLIC
-        SDL2::SDL2 SDL2::SDL2main SDL2::SDL2_mixer
+        SDL2::SDL2 SDL2::SDL2main SDL2::SDL2_mixer SDL2::SDL2_image
         fmt::fmt fmt::fmt-header-only
         imgui::imgui
         glm

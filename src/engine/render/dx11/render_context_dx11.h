@@ -3,7 +3,6 @@
 #include <engine/window.h>
 #include <engine/render/core/i_render_context.h>
 #include <engine/render/core/camera.h>
-#include <DirectXTK/CommonStates.h>
 
 namespace cgt::render
 {
