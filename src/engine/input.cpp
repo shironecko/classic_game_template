@@ -22,39 +22,38 @@ WindowEventControlFlow Input::ProcessWindowEvent(const SDL_Event& event)
     case SDL_KEYDOWN:
     {
         auto scancode = event.key.keysym.scancode;
-        Set(m_Pressed, scancode, true);
-        Set(m_Held, scancode, true);
+        SetKeyboardKeyState(m_Pressed, scancode, true);
+        SetKeyboardKeyState(m_Held, scancode, true);
         eventHandled = true;
         break;
     }
     case SDL_KEYUP:
     {
         auto scancode = event.key.keysym.scancode;
-        Set(m_Held, scancode, false);
-        Set(m_Released, scancode, true);
+        SetKeyboardKeyState(m_Held, scancode, false);
+        SetKeyboardKeyState(m_Released, scancode, true);
         eventHandled = true;
         break;
     }
     case SDL_MOUSEBUTTONDOWN:
     {
-        auto keyCode = SDLMouseButtonIndexToKeyCode(event.button.button);
-        m_Pressed.set((usize)keyCode, true);
-        m_Held.set((usize)keyCode, true);
+        u8 buttonIndex = event.button.button;
+        SetMouseButtonState(m_Pressed, buttonIndex, true);
+        SetMouseButtonState(m_Held, buttonIndex, true);
         eventHandled = true;
         break;
     }
     case SDL_MOUSEBUTTONUP:
     {
-        auto keyCode = SDLMouseButtonIndexToKeyCode(event.button.button);
-        m_Held.set((usize)keyCode, false);
-        m_Released.set((usize)keyCode, true);
+        u8 buttonIndex = event.button.button;
+        SetMouseButtonState(m_Held, buttonIndex, false);
+        SetMouseButtonState(m_Released, buttonIndex, true);
         eventHandled = true;
         break;
     }
     case SDL_MOUSEWHEEL:
-        auto yDirection = event.wheel.y;
-        auto keyCode = yDirection > 0 ? KeyCode::MouseWheelUp : KeyCode::MouseWheelDown;
-        m_Pressed.set((usize)keyCode, true);
+        i32 motion = event.wheel.y;
+        m_MouseWheelMotion += motion;
         eventHandled = true;
         break;
     }
@@ -71,6 +70,7 @@ void Input::NewFrame()
 {
     m_Pressed.reset();
     m_Released.reset();
+    m_MouseWheelMotion = 0;
 }
 
 bool Input::IsKeyPressed(KeyCode keyCode) const
@@ -96,6 +96,11 @@ glm::ivec2 Input::GetMousePosition() const
     return position;
 }
 
+i32 Input::GetMouseWheelMotion() const
+{
+    return m_MouseWheelMotion;
+}
+
 bool Input::Get(const Input::KeysBitset& bitset, KeyCode key) const
 {
     if (key == KeyCode::Any)
@@ -106,8 +111,10 @@ bool Input::Get(const Input::KeysBitset& bitset, KeyCode key) const
     return bitset.test((usize)key);
 }
 
-void Input::Set(KeysBitset& bitset, SDL_Scancode scancode, bool active)
+void Input::SetKeyboardKeyState(KeysBitset& bitset, SDL_Scancode scancode, bool active)
 {
+    CGT_ASSERT(scancode < s_ScancodeMappings.size());
+
     const auto keyCode = s_ScancodeMappings[scancode];
     if (keyCode != KeyCode::Any)
     {
@@ -115,14 +122,25 @@ void Input::Set(KeysBitset& bitset, SDL_Scancode scancode, bool active)
     }
 }
 
-KeyCode Input::SDLMouseButtonIndexToKeyCode(u8 buttonIndex) const
+void Input::SetMouseButtonState(KeysBitset& bitset, u8 buttonIndex, bool active)
 {
+    auto keyCode = KeyCode::Any;
     switch (buttonIndex)
     {
-    case SDL_BUTTON_LEFT: return KeyCode::LeftMouseButton;
-    case SDL_BUTTON_RIGHT: return KeyCode::RightMouseButton;
-    case SDL_BUTTON_MIDDLE: return KeyCode::MiddleMouseButton;
-    default: CGT_PANIC("Unknown SDL mouse button index: %u", (u32)buttonIndex); return KeyCode::Any;
+    case SDL_BUTTON_LEFT:
+        keyCode = KeyCode::LeftMouseButton;
+        break;
+    case SDL_BUTTON_RIGHT:
+        keyCode =  KeyCode::RightMouseButton;
+        break;
+    case SDL_BUTTON_MIDDLE:
+        keyCode =  KeyCode::MiddleMouseButton;
+        break;
+    }
+
+    if (keyCode != KeyCode::Any)
+    {
+        bitset.set((usize)keyCode, active);
     }
 }
 
@@ -131,6 +149,7 @@ void Input::Reset()
     m_Pressed.reset();
     m_Held.reset();
     m_Released.reset();
+    m_MouseWheelMotion = 0;
 }
 
 Input::ScancodeMappings GenerateScancodeMappings()

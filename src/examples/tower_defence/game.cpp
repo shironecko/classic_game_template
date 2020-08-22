@@ -29,18 +29,8 @@ cgt::IGame::ControlFlow Game::Update(cgt::Engine& engine, float deltaTime, bool 
         accumulatedDelta += scaledDt;
     }
 
-    int mouseWheelMotion = 0;
-    if (engine.GetInput().IsKeyPressed(cgt::KeyCode::MouseWheelUp))
-    {
-        mouseWheelMotion = 1;
-    }
-    else if (engine.GetInput().IsKeyPressed(cgt::KeyCode::MouseWheelDown))
-    {
-        mouseWheelMotion = -1;
-    }
-    scaleFactorIdx -= mouseWheelMotion;
+    scaleFactorIdx -= engine.GetInput().GetMouseWheelMotion();
     scaleFactorIdx = glm::clamp(scaleFactorIdx, 0, (i32)CGT_ARRAY_LENGTH(SCALE_FACTORS) - 1);
-
 
     // NOTE: prone to "spiral of death"
     // see https://www.gafferongames.com/post/fix_your_timestep/

@@ -12,6 +12,7 @@ add_library(engine
     tileset_helper.cpp tileset_helper.h
     engine.cpp engine.h
     input.cpp input.h
+    key_codes.h
     ui_extensions.cpp ui_extensions.h
     api.h
     extern/tracy/TracyClient.cpp
