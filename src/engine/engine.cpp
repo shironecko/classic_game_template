@@ -128,9 +128,8 @@ void Engine::RenderPerformanceStats()
         ImGui::NextColumn();
         ImGui::Text("%u", m_LastFrameStats.drawcallCount);
         ImGui::Columns();
-
-        ImGui::End();
     }
+    ImGui::End();
 }
 
 render::TextureHandle Engine::LoadTexture(const std::filesystem::path& absolutePath)
