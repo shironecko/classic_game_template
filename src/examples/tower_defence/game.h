@@ -23,6 +23,9 @@ private:
 
     std::unique_ptr<GameSession> m_GameSession;
     cgt::render::SpriteDrawList m_EffectsDrawList;
+
+    std::unique_ptr<cgt::Music> m_Music;
+    std::unique_ptr<cgt::SoundEffect> m_EnemyDeathSound;
 };
 
 

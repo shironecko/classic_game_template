@@ -7,6 +7,11 @@ void Game::Initialize(cgt::Engine& engine)
     engine.GetCamera().pixelsPerUnit = 64.0f;
 
     m_GameSession = GameSession::FromMap(cgt::AssetPath("examples/maps/tower_defense.json"), engine, FIXED_DELTA);
+
+    m_Music = engine.GetAudio().LoadMusic(cgt::AssetPath("examples/audio/music.wav"));
+    m_EnemyDeathSound = engine.GetAudio().LoadSoundEffect(cgt::AssetPath("examples/audio/wilhelm.wav"));
+
+    engine.GetAudio().PlayMusic(*m_Music, true);
 }
 
 cgt::IGame::ControlFlow Game::Update(cgt::Engine& engine, float deltaTime, bool quitRequestedByUser)
@@ -40,7 +45,13 @@ cgt::IGame::ControlFlow Game::Update(cgt::Engine& engine, float deltaTime, bool 
         m_GameSession->TimeStep(m_GameCommands, m_GameEvents);
         m_GameCommands.clear();
 
-        // FIXME: actually make use of events
+        for (auto& event : m_GameEvents)
+        {
+            if (event.type == GameEvent::Type::EnemyDied)
+            {
+                engine.GetAudio().PlaySoundEffect(*m_EnemyDeathSound);
+            }
+        }
         m_GameEvents.clear();
     }
 

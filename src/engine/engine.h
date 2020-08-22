@@ -2,6 +2,7 @@
 
 #include <engine/window.h>
 #include <engine/input.h>
+#include <engine/audio.h>
 #include <engine/ui_bindings.h>
 #include <engine/ui_extensions.h>
 #include <engine/render/core/sprite_draw_list.h>
@@ -42,6 +43,7 @@ public:
     void RenderSprites(render::SpriteDrawList& sprites, bool sortBeforeRendering = true);
 
     Input& GetInput() { return m_Input; }
+    Audio& GetAudio() { return m_Audio; }
     render::Camera& GetCamera() { return m_Camera; }
 
     bool enableDebugShortcuts = true;
@@ -62,6 +64,7 @@ private:
     UIBindings m_Ui;
     Input m_Input;
     render::Camera m_Camera;
+    Audio m_Audio;
     std::unique_ptr<IGame> m_Game;
 
     MetricsGuiMetric m_FrametimeMetric;
