@@ -30,8 +30,6 @@ void Engine::RunInternal()
         m_Game->Initialize(*this);
     }
 
-    Input::Initialize();
-
     Clock frameClock;
     auto controlFlow = IGame::ControlFlow::ContinueRunning;
     do

@@ -140,8 +140,6 @@ enum class KeyCode
 class Input final
 {
 public:
-    static void Initialize();
-
     enum class InputProcessingMode
     {
         Passthrough,
@@ -165,6 +163,8 @@ public:
 private:
     typedef std::array<KeyCode, SDL_Scancode::SDL_NUM_SCANCODES> ScancodeMappings;
     typedef std::bitset<(usize)KeyCode::Count> KeysBitset;
+
+    friend ScancodeMappings GenerateScancodeMappings();
 
     bool Get(const KeysBitset& bitset, KeyCode key) const;
     void Set(KeysBitset& bitset, SDL_Scancode scancode, bool active);
