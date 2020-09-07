@@ -3,6 +3,11 @@
 #include <engine/render/core/sprite_draw_list.h>
 #include <engine/render/core/camera.h>
 
+namespace cgt
+{
+class UIBindings;
+}
+
 namespace cgt::render
 {
 
@@ -31,7 +36,7 @@ public:
     virtual ~IRenderContext() = default;
 
 protected:
-    friend class UIBindings;
+    friend class ::cgt::UIBindings;
 
     virtual void ImGuiBindingsInit(SDL_Window* window) = 0;
     virtual void ImGuiBindingsNewFrame() = 0;
